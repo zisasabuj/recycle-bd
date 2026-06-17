@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Recycle — Create & Winner</title>
+  <link rel="stylesheet" href="styles.css?v=24">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    /* Page-specific: keep topbar + this view as a clean two-col page */
+    body { background: var(--color-background-tertiary); }
+    .page-head {
+      padding: 20px 24px 0;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    .page-head h1 { font-size: 20px; font-weight: 500; margin: 0 0 4px; display: inline-flex; align-items: center; gap: 8px; }
+    .page-head p { font-size: 13px; color: var(--color-text-secondary); margin: 0; }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="logo">
+      <span class="logo-mark">♻️</span>
+      <span class="logo-text">Recycle</span>
+      <span class="logo-pill">BD</span>
+    </div>
+    <div class="search-wrap">
+      <span class="search-ico">🔍</span>
+      <input type="text" placeholder="Search…">
+    </div>
+    <nav class="nav">
+      <a class="nav-item" href="index.html">📊 Browse</a>
+      <a class="nav-item active">＋ Create</a>
+      <a class="nav-item">🏆 Won</a>
+    </nav>
+    <div class="topbar-right">
+      <button class="icon-btn">🔔</button>
+      <div class="topbar-user">
+        <div class="avatar sm">👤</div>
+        <div class="user-meta">
+          <div class="user-name">Zahir</div>
+          <div class="user-role">Member</div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div class="page-head">
+    <h1>＋ Create New Auction</h1>
+    <p>Fill in your item details. Once posted, a 48-hour sealed bidding window begins.</p>
+  </div>
+
+  <div class="winner-grid">
+
+    <!-- LEFT: Create Form -->
+    <div class="create-card">
+      <h2>📝 Item Details</h2>
+      <p class="form-sub">Provide accurate details — clear photos and descriptions get more bids.</p>
+
+      <div class="form-block">
+        <label class="form-label">Item Name <span class="req">*</span></label>
+        <input type="text" class="form-input" placeholder="e.g. Samsung Galaxy S22 Ultra 256GB">
+      </div>
+
+      <div class="form-row-2">
+        <div>
+          <label class="form-label">Category <span class="req">*</span></label>
+          <select class="form-select">
+            <option>Electronics</option>
+            <option>Mobile</option>
+            <option>Vehicle</option>
+            <option>Furniture</option>
+            <option>Fashion</option>
+          </select>
+        </div>
+        <div>
+          <label class="form-label">Condition <span class="req">*</span></label>
+          <select class="form-select">
+            <option>Like New</option>
+            <option>Good</option>
+            <option>Used</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-block">
+        <label class="form-label">Base Price (BDT) <span class="req">*</span></label>
+        <div class="price-input">
+          <span class="prefix">৳</span>
+          <input type="number" placeholder="65000">
+        </div>
+      </div>
+
+      <div class="form-block">
+        <label class="form-label">Location (only City + Area will be shown) <span class="req">*</span></label>
+        <div class="loc-box">
+          <div class="loc-box-head">
+            <span class="ico">🔒</span>
+            <p class="note">Your full address is never revealed. Only the winning bidder sees your contact after payment.</p>
+          </div>
+          <div class="loc-row">
+            <div>
+              <label class="form-label">District</label>
+              <select class="form-select">
+                <option>Dhaka</option>
+                <option>Chattogram</option>
+                <option>Sylhet</option>
+              </select>
+            </div>
+            <div>
+              <label class="form-label">Thana</label>
+              <select class="form-select">
+                <option>Gulshan</option>
+                <option>Banani</option>
+                <option>Dhanmondi</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-block">
+        <label class="form-label">Detailed Description <span class="req">*</span></label>
+        <textarea class="form-textarea" rows="4" placeholder="Describe condition, usage duration, accessories, etc."></textarea>
+      </div>
+
+      <div class="rules-box">
+        <p class="rules-box-title">📌 Auction Rules</p>
+        <ul>
+          <li>Auction runs for <strong>48 hours</strong></li>
+          <li>All <strong>bidders stay anonymous</strong></li>
+          <li>20% commission paid by <strong>both buyer and seller</strong></li>
+          <li>Contact details unlock only after payment</li>
+        </ul>
+      </div>
+
+      <button class="btn-submit"><span>＋</span>&nbsp;Start Auction</button>
+    </div>
+
+    <!-- RIGHT: 3 stacked panels -->
+    <div class="winner-right">
+
+      <!-- 1. Winner Notification -->
+      <div class="winner-notify">
+        <div class="winner-notify-head">
+          <div class="winner-notify-ico">🏆</div>
+          <div>
+            <p class="winner-notify-title">🎉 Congratulations! You Won</p>
+            <p class="winner-notify-sub">You are the highest bidder on this auction</p>
+          </div>
+        </div>
+        <div class="winner-amounts">
+          <div class="winner-amount-box">
+            <p class="winner-amount-label">Winning Bid</p>
+            <p class="winner-amount-val">৳ 78,000</p>
+          </div>
+          <div class="winner-amount-box amber">
+            <p class="winner-amount-label">20% Commission</p>
+            <p class="winner-amount-val">৳ 15,600</p>
+          </div>
+        </div>
+        <p class="winner-notice">⚠️ On confirm, your 20% commission is deducted first.</p>
+        <div class="winner-actions">
+          <button class="btn-confirm">✅ Confirm Purchase</button>
+          <button class="btn-reject">❌ Cancel</button>
+        </div>
+      </div>
+
+      <!-- 2. Commission Payment Status -->
+      <div class="payment-card">
+        <h3 class="payment-title">💰 Commission Payment Status</h3>
+        <div class="payment-list">
+          <div class="payment-item done">
+            <span class="ico">✓</span>
+            <span>Your Commission Payment</span>
+            <span class="payment-amount">৳ 15,600</span>
+          </div>
+          <div class="payment-item pending">
+            <span class="ico">⏳</span>
+            <span>Seller Payment Pending</span>
+            <span class="payment-amount">৳ 15,600</span>
+          </div>
+          <div class="payment-item wait">
+            <span class="ico">🔒</span>
+            <span>Contact Unlock Pending</span>
+            <span class="payment-amount">—</span>
+          </div>
+        </div>
+        <p class="payment-foot">Contact details unlock once seller payment is confirmed</p>
+      </div>
+
+      <!-- 3. Contact Unlocked -->
+      <div class="contact-card">
+        <div class="contact-head">
+          <div class="contact-ico">🔓</div>
+          <div>
+            <p class="contact-title">Contact Info Unlocked!</p>
+            <p class="contact-sub">Seller contact is now visible to you</p>
+          </div>
+        </div>
+        <div class="contact-info">
+          <p class="contact-label">Seller</p>
+          <div class="contact-person">
+            <div class="contact-avatar">R</div>
+            <div>
+              <p class="contact-name">Rahela Begum</p>
+              <p class="contact-phone">📞 01712-345678</p>
+            </div>
+          </div>
+        </div>
+        <p class="contact-foot">🔒 Visible only to you — no one else can see this</p>
+      </div>
+
+    </div>
+  </div>
+
+</body>
+</html>

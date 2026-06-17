@@ -1,0 +1,197 @@
+generator client {
+  provider = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  BUYER
+  SELLER
+  BOTH
+  ADMIN
+  SUPER_ADMIN
+}
+
+enum AuctionStatus {
+  DRAFT
+  ACTIVE
+  PAYMENT_PENDING
+  COMPLETED
+  CANCELLED
+  EXPIRED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+}
+
+model User {
+  id            String    @id @default(cuid())
+  username      String    @unique
+  email         String    @unique
+  passwordHash  String
+  fullName      String?
+  phone         String?
+  role          UserRole  @default(BOTH)
+  rating        Float     @default(0)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  auctions      Auction[]      @relation("SellerAuctions")
+  bids          Bid[]
+  buyerDeals    Transaction[]  @relation("BuyerDeals")
+  sellerDeals   Transaction[]  @relation("SellerDeals")
+  notifications Notification[]
+  watchlist     Watchlist[]
+  chatsAsBuyer  Chat[]         @relation("ChatBuyer")
+  chatsAsSeller Chat[]         @relation("ChatSeller")
+  chatMessages  ChatMessage[]
+}
+
+model Auction {
+  id             String         @id @default(cuid())
+  sellerId       String
+  seller         User           @relation("SellerAuctions", fields: [sellerId], references: [id])
+
+  title          String
+  description    String
+  images         String[]
+  category       String
+  condition      String
+
+  basePrice      Decimal        @db.Decimal(12, 2)
+  currentMaxBid  Decimal?       @db.Decimal(12, 2)
+  bidIncrement   Decimal        @default(100) @db.Decimal(12, 2)
+
+  city           String
+  area           String
+  district       String?
+  thana          String?
+
+  startsAt       DateTime       @default(now())
+  endsAt         DateTime
+  status         AuctionStatus  @default(ACTIVE)
+
+  winnerId       String?
+  secondWinnerId String?
+
+  bids           Bid[]
+  transaction    Transaction?
+  watchlist      Watchlist[]
+  chats          Chat[]
+
+  // Seller analytics — incremental counters (cheap to read on dashboard)
+  viewCount      Int            @default(0)
+
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  @@index([status, endsAt])
+  @@index([category, city])
+  @@index([sellerId])
+}
+
+model Bid {
+  id         String   @id @default(cuid())
+  auctionId  String
+  auction    Auction  @relation(fields: [auctionId], references: [id], onDelete: Cascade)
+  bidderId   String
+  bidder     User     @relation(fields: [bidderId], references: [id])
+  amount     Decimal  @db.Decimal(12, 2)
+  placedAt   DateTime @default(now())
+  isWinning  Boolean  @default(false)
+  isSecond   Boolean  @default(false)
+
+  @@index([auctionId, amount])
+  @@index([bidderId])
+}
+
+model Transaction {
+  id              String        @id @default(cuid())
+  auctionId       String        @unique
+  auction         Auction       @relation(fields: [auctionId], references: [id])
+  buyerId         String
+  buyer           User          @relation("BuyerDeals", fields: [buyerId], references: [id])
+  sellerId        String
+  seller          User          @relation("SellerDeals", fields: [sellerId], references: [id])
+
+  finalAmount     Decimal       @db.Decimal(12, 2)
+  commissionRate  Decimal       @default(0.20) @db.Decimal(4, 2)
+  commissionAmt   Decimal       @db.Decimal(12, 2)
+
+  buyerPaid       PaymentStatus @default(PENDING)
+  sellerPaid      PaymentStatus @default(PENDING)
+  buyerPaidAt     DateTime?
+  sellerPaidAt    DateTime?
+
+  contactUnlocked Boolean       @default(false)
+  completedAt     DateTime?
+
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String
+  message   String
+  data      Json?
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId, read])
+}
+
+// ========== v26 NEW: Watchlist ==========
+model Watchlist {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  auctionId String
+  auction   Auction  @relation(fields: [auctionId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, auctionId])
+  @@index([userId])
+}
+
+// ========== v26 NEW: Chat (post-win only) ==========
+model Chat {
+  id            String        @id @default(cuid())
+  auctionId     String
+  auction       Auction       @relation(fields: [auctionId], references: [id], onDelete: Cascade)
+  buyerId       String
+  buyer         User          @relation("ChatBuyer", fields: [buyerId], references: [id])
+  sellerId      String
+  seller        User          @relation("ChatSeller", fields: [sellerId], references: [id])
+  lastMessageAt DateTime      @default(now())
+  lastMessage   String?
+  createdAt     DateTime      @default(now())
+  messages      ChatMessage[]
+
+  @@unique([auctionId, buyerId, sellerId])
+  @@index([buyerId, lastMessageAt])
+  @@index([sellerId, lastMessageAt])
+}
+
+model ChatMessage {
+  id        String    @id @default(cuid())
+  chatId    String
+  chat      Chat      @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  senderId  String
+  sender    User      @relation(fields: [senderId], references: [id])
+  text      String
+  createdAt DateTime  @default(now())
+  readAt    DateTime?
+
+  @@index([chatId, createdAt])
+}

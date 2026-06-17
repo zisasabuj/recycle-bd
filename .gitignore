@@ -1,0 +1,39 @@
+# Dependencies
+**/node_modules/
+**/.pnp
+**/.pnp.js
+
+# Environment files (NEVER commit secrets)
+**/.env
+**/.env.local
+**/.env.*.local
+!**/.env.example
+
+# Logs
+**/*.log
+**/logs/
+/tmp/
+
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+
+# Build artifacts
+**/dist/
+**/build/
+
+# Prisma local artifacts (but keep generated client)
+backend/prisma/dev.db
+backend/prisma/dev.db-journal
+
+# Uploads from local dev (Render bakes images into image, but allow override)
+# Comment out the next line to actually commit uploaded product images
+# backend/uploads/temp/
+# backend/uploads/avatars/
+# backend/uploads/products/  ← DO commit (Render ephemeral FS would wipe otherwise)
+!backend/uploads/products/*.jpg
+!backend/uploads/products/*.png
+!backend/uploads/products/*.webp

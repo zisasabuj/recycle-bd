@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Recycle — Sealed-Bid Auctions Bangladesh</title>
+  <link rel="stylesheet" href="styles.css?v=30">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+</head>
+<body>
+  <!-- ============ TOP BAR ============ -->
+  <header class="topbar">
+    <div class="logo">
+      <span class="logo-mark">♻️</span>
+      <span class="logo-text">Recycle</span>
+      <span class="logo-pill">BD</span>
+    </div>
+
+    <div class="search-wrap">
+      <span class="search-ico">🔍</span>
+      <input id="searchInput" type="text" placeholder="Search by item, category, city..."
+             oninput="searchDebounce()">
+    </div>
+
+    <nav class="nav">
+      <a class="nav-item active" data-view="browse" onclick="switchView('browse')">
+        <span class="nav-ico">📊</span> Browse
+      </a>
+      <a class="nav-item" data-view="endingSoon" onclick="switchView('endingSoon')">
+        <span class="nav-ico">🔥</span> Ending Soon
+      </a>
+      <a class="nav-item" data-view="watchlist" onclick="switchView('watchlist')">
+        <span class="nav-ico">❤️</span> Watchlist
+      </a>
+      <a class="nav-item" data-view="dashboard" onclick="switchView('dashboard')">
+        <span class="nav-ico">📈</span> Dashboard
+      </a>
+      <a class="nav-item" onclick="openCreateModal()">
+        <span class="nav-ico">＋</span> Create
+      </a>
+      <a class="nav-item" onclick="viewWinnerDemo()">
+        <span class="nav-ico">🏆</span> Won
+      </a>
+    </nav>
+
+    <div class="topbar-right">
+      <button class="icon-btn" title="Notifications" onclick="comingSoon('Notifications')">
+        🔔<span class="notif-dot" id="notifDot" style="display:none"></span>
+      </button>
+      <div class="topbar-user" id="topbarUser" onclick="openAuthModal()">
+        <div class="avatar sm">👤</div>
+        <div class="user-meta">
+          <div class="user-name" id="topbarUserName">Sign in</div>
+          <div class="user-role">Guest</div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ============ MAIN ============ -->
+  <div class="main">
+    <main class="content" id="contentRoot">
+
+      <!-- BROWSE -->
+      <section id="browseSection" class="view view-active">
+
+        <!-- HERO BANNER + ENDING SOON -->
+        <div class="hero-row">
+          <div class="hero">
+            <p class="hero-eyebrow">Fully Sealed-Bid Auction System</p>
+            <h1 class="hero-title">Sell Second-Hand Items<br>Through Sealed Bidding</h1>
+            <p class="hero-sub">Keep bidder identities 100% anonymous. A 48-hour sealed-bidding window ensures you get the true market value of your item.</p>
+            <div class="hero-ctas">
+              <button class="btn-primary-lg" onclick="openCreateModal()"><span>＋</span>&nbsp;Start an Auction</button>
+              <button class="btn-ghost-lg" onclick="switchView('browse')"><span>🔍</span>&nbsp;Browse Items</button>
+            </div>
+            <div class="hero-stats">
+              <div>
+                <p class="hero-stat-num purple" id="heroActive">0</p>
+                <p class="hero-stat-label">Active Auctions</p>
+              </div>
+              <div class="hero-stat-divider">
+                <p class="hero-stat-num green" id="heroAnonymity">100%</p>
+                <p class="hero-stat-label">Anonymity Rate</p>
+              </div>
+              <div class="hero-stat-divider">
+                <p class="hero-stat-num blue" id="heroDuration">48h</p>
+                <p class="hero-stat-label">Auction Duration</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- 🔥 ENDING SOON — RIGHT SIDE OF HERO (4 small cards) -->
+          <aside class="hero-ending-soon" id="heroEndingSoon">
+            <div class="hero-es-head">
+              <h2>🔥 Ending Soon</h2>
+              <button class="hero-es-viewall" onclick="switchView('endingSoon')">View all →</button>
+            </div>
+            <div id="heroEndingSoonList" class="hero-es-grid">
+              <div class="hero-es-empty">Loading…</div>
+            </div>
+          </aside>
+        </div>
+
+        <!-- FILTER BAR -->
+        <div class="filter-bar">
+          <div class="filter-left">
+            <button class="filter-pill active" data-cat="" onclick="setCategory(this,'')">All Categories</button>
+            <select class="lot-sort" id="topSort" onchange="loadAuctions()">
+              <option value="ending">Ending Soon</option>
+              <option value="newest">Newest First</option>
+              <option value="price-asc">Price: Low to High</option>
+              <option value="price-desc">Price: High to Low</option>
+            </select>
+          </div>
+          <div class="filter-right">
+            <select id="districtFilter" onchange="updateThanaFilter(); loadAuctions();">
+              <option value="">All Cities</option>
+            </select>
+            <select id="thanaFilter" onchange="loadAuctions()">
+              <option value="">All Areas</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- LOT SECTION -->
+        <section class="lot-section">
+          <div class="lot-header">
+            <h2>🔨 Live Auctions <span class="count" id="lotCount">(Loading…)</span></h2>
+          </div>
+          <div id="auctionsList" class="lot-grid">
+            <div class="lot-empty">Loading auctions…</div>
+          </div>
+        </section>
+
+        <!-- HOW IT WORKS -->
+        <div class="how-section">
+          <h2 class="how-title">How It Works</h2>
+          <div class="how-grid">
+            <div class="how-card">
+              <div class="how-ico-wrap purple">📦</div>
+              <p class="how-card-title">Post Your Item</p>
+              <p class="how-card-sub">Add photos, price, location</p>
+            </div>
+            <div class="how-card">
+              <div class="how-ico-wrap green">🔒</div>
+              <p class="how-card-title">Sealed Bidding</p>
+              <p class="how-card-sub">Bidders stay anonymous</p>
+            </div>
+            <div class="how-card">
+              <div class="how-ico-wrap amber">⏱</div>
+              <p class="how-card-title">48-Hour Timer</p>
+              <p class="how-card-sub">Auto-closes when time is up</p>
+            </div>
+            <div class="how-card">
+              <div class="how-ico-wrap blue">🔓</div>
+              <p class="how-card-title">Contact Unlock</p>
+              <p class="how-card-sub">20% commission on both sides</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- ACTIVITY TICKER -->
+        <div class="ticker">
+          <div class="ticker-label">Live Activity</div>
+          <div class="ticker-track">
+            <div class="ticker-item">🔨 <span class="num" id="tickerBids">0</span> bids placed today</div>
+            <div class="ticker-item">📦 <span class="num" id="tickerActive">0</span> auctions ending in 48h</div>
+            <div class="ticker-item">🔒 <span class="num">100%</span> anonymous until close</div>
+            <div class="ticker-item">💼 <span class="num">20%</span> commission on both sides</div>
+            <div class="ticker-item">⏱ <span class="num">48h</span> sealed-bid window</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- AUCTION DETAIL -->
+      <section id="auctionDetailSection" class="view">
+        <div id="auctionDetail"></div>
+      </section>
+
+      <!-- 🔥 ENDING SOON VIEW -->
+      <section id="endingSoonSectionView" class="view">
+        <div class="view-header">
+          <button class="btn-back" onclick="switchView('browse')">← Back</button>
+          <h2>🔥 Ending Soon</h2>
+          <p class="view-sub">Auctions closing in the next 24 hours — last chance to bid</p>
+        </div>
+        <div id="endingSoonGrid" class="lot-grid">
+          <div class="lot-empty">Loading…</div>
+        </div>
+      </section>
+
+      <!-- ❤️ WATCHLIST VIEW -->
+      <section id="watchlistSection" class="view">
+        <div class="view-header">
+          <button class="btn-back" onclick="switchView('browse')">← Back</button>
+          <h2>❤️ My Watchlist</h2>
+          <p class="view-sub">Items you've saved — get notified before they end</p>
+        </div>
+        <div id="watchlistGrid" class="lot-grid">
+          <div class="lot-empty">Loading…</div>
+        </div>
+      </section>
+
+      <!-- 📈 SELLER DASHBOARD VIEW -->
+      <section id="dashboardSection" class="view">
+        <div class="view-header">
+          <button class="btn-back" onclick="switchView('browse')">← Back</button>
+          <h2>📈 Seller Dashboard</h2>
+          <p class="view-sub">Your auction performance at a glance</p>
+        </div>
+        <div id="dashboardContent">
+          <div class="lot-empty">Loading dashboard…</div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- ============ CHAT PANEL ============ -->
+  <div id="chatPanel" class="chat-panel" style="display:none">
+    <div class="chat-header">
+      <span class="chat-title">💬 Messages</span>
+      <button class="chat-close" onclick="closeChatPanel()">×</button>
+    </div>
+    <div class="chat-body">
+      <div class="chat-list" id="chatList">
+        <div class="chat-empty">No messages yet</div>
+      </div>
+      <div class="chat-thread" id="chatThread" style="display:none">
+        <div class="chat-thread-head" id="chatThreadHead"></div>
+        <div class="chat-messages" id="chatMessages"></div>
+        <form class="chat-input" onsubmit="event.preventDefault(); sendMessage();">
+          <input type="text" id="chatInputText" placeholder="Type a message..." autocomplete="off">
+          <button type="submit">Send</button>
+        </form>
+      </div>
+    </div>
+  </div>
+  <button class="chat-fab" id="chatFab" onclick="toggleChatPanel()" style="display:none" title="Messages">
+    💬 <span class="chat-fab-badge" id="chatFabBadge" style="display:none">0</span>
+  </button>
+
+  <!-- ============ AUTH MODAL ============ -->
+  <div id="authModal" class="modal" style="display:none">
+    <div class="modal-content">
+      <span class="close" onclick="closeAuthModal()">&times;</span>
+      <h2 id="authTitle">Login</h2>
+      <p class="modal-sub">Welcome to Recycle — sealed-bid auctions in Bangladesh</p>
+      <form id="authForm" onsubmit="handleAuth(event)">
+        <label>Username<input type="text" id="authUsername" required></label>
+        <label id="emailLabel" style="display:none">Email<input type="email" id="authEmail"></label>
+        <label>Password<input type="password" id="authPassword" required></label>
+        <label id="fullNameLabel" style="display:none">Full Name (optional)<input type="text" id="authFullName"></label>
+        <label id="phoneLabel" style="display:none">Phone (optional)<input type="text" id="authPhone"></label>
+        <button type="submit" class="btn-primary" id="authSubmit">Login</button>
+        <p id="authSwitch" class="link" onclick="toggleAuthMode()">Don't have an account? Register</p>
+        <p id="authError" class="error"></p>
+      </form>
+    </div>
+  </div>
+
+  <!-- ============ CREATE AUCTION MODAL ============ -->
+  <div id="createModal" class="modal" style="display:none">
+    <div class="modal-content wide">
+      <span class="close" onclick="closeCreateModal()">&times;</span>
+      <h2>＋ Post Item for Auction</h2>
+      <p class="modal-sub">Once posted, a 48-hour timer starts immediately</p>
+      <form id="createForm" onsubmit="handleCreateAuction(event)">
+        <label>Title<input type="text" id="title" required></label>
+        <label>Description<textarea id="description" rows="3" required></textarea></label>
+
+        <div class="image-upload-section">
+          <label class="image-upload-label" for="images">
+            <span class="upload-icon">📷</span>
+            <span class="upload-text">Click to upload images</span>
+            <span class="upload-hint">JPG/PNG/WebP — up to 5 images, 5MB each</span>
+          </label>
+          <input type="file" id="images" accept="image/jpeg,image/jpg,image/png,image/webp,image/gif" multiple style="display:none">
+          <div id="imagePreview" class="image-preview"></div>
+        </div>
+
+        <div class="form-row">
+          <label>Category
+            <select id="category" required>
+              <option value="">Select Category</option>
+            </select>
+          </label>
+          <label>Condition
+            <select id="condition" required>
+              <option value="Like New">Like New</option>
+              <option value="Good">Good</option>
+              <option value="Used">Used</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="form-row">
+          <label>Base Price (BDT)<input type="number" id="basePrice" min="100" required></label>
+          <label>Bid Increment (default 100)<input type="number" id="bidIncrement" min="50" placeholder="100"></label>
+        </div>
+
+        <div class="form-row">
+          <label>City
+            <select id="city" required onchange="updateAreas()">
+              <option value="">Select City</option>
+            </select>
+          </label>
+          <label>Area
+            <select id="area" required>
+              <option value="">Select Area</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="form-row">
+          <label>District (Division/District)
+            <select id="district" onchange="updateThanas()">
+              <option value="">Select District (optional)</option>
+            </select>
+          </label>
+          <label>Thana / Upazila (Thana/Upazila)
+            <select id="thana" disabled>
+              <option value="">Select Thana (optional)</option>
+            </select>
+          </label>
+        </div>
+
+        <p class="note">⚠️ Only city + area required. District + thana is optional for BD-specific local search.</p>
+        <button type="submit" class="btn-primary">Post Auction (48h timer starts)</button>
+        <p id="createError" class="error"></p>
+      </form>
+    </div>
+  </div>
+  <script src="app.js?v=30"></script>
+</body>
+</html>
