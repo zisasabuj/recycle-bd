@@ -124,9 +124,15 @@ export default async function handler(req, res) {
     return res.status(200).end();
   }
 
-  // Build URL path: Vercel catch-all puts the segments into req.query.path (array)
-  const pathSegs = Array.isArray(req.query.path) ? req.query.path : (req.query.path ? [req.query.path] : []);
-  const url = '/' + pathSegs.join('/');
+  // Build URL path from req.url — more reliable than req.query.path
+  // (Vercel optional catch-all doesn't always populate req.query.path)
+  let urlPath = req.url || '/';
+  // Strip query string
+  urlPath = urlPath.split('?')[0];
+  // Strip /api prefix
+  if (urlPath.startsWith('/api/')) urlPath = urlPath.slice(4);
+  else if (urlPath === '/api') urlPath = '/';
+  const url = urlPath || '/';
 
   const route = findRoute(req.method, url);
   if (!route) {
