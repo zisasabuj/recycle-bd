@@ -1,0 +1,114 @@
+// /api/auctions/[id] — GET (detail), PUT (update), DELETE
+import { prisma } from '../../../_lib/prisma.js';
+import { withCors, json, error } from '../../../_lib/middleware.js';
+import { getUserFromHeader } from '../../../_lib/auth.js';
+
+// GET /api/auctions/:id — public detail view (no auth)
+async function handleGet(req, res, id) {
+  try {
+    const auction = await prisma.auction.findUnique({
+      where: { id },
+      include: {
+        seller: { select: { username: true, rating: true, createdAt: true } },
+        _count: { select: { bids: true } },
+      },
+    });
+    if (!auction) return error(res, 404, 'Auction not found');
+    return json(res, 200, { auction });
+  } catch (err) {
+    console.error('[get auction]', err);
+    return error(res, 500, 'Failed to get auction');
+  }
+}
+
+// PUT /api/auctions/:id — owner or admin update
+async function handlePut(req, res, id, userId) {
+  try {
+    const auction = await prisma.auction.findUnique({ where: { id } });
+    if (!auction) return error(res, 404, 'Auction not found');
+
+    const requester = await prisma.user.findUnique({ where: { id: userId } });
+    const isOwner = auction.sellerId === userId;
+    const isAdmin = requester && (requester.role === 'ADMIN' || requester.role === 'SUPER_ADMIN');
+    if (!isOwner && !isAdmin) return error(res, 403, 'Only the seller or admin can edit');
+
+    const setting = await prisma.systemSetting.findUnique({ where: { key: 'edit_mode' } });
+    const editMode = setting && (setting.value === 'CLOSE' || setting.value === 'OPEN') ? setting.value : 'OPEN';
+
+    const allEditable = ['title', 'description', 'category', 'condition', 'basePrice', 'bidIncrement', 'city', 'area', 'district', 'thana', 'images'];
+    const allowedInMode = editMode === 'CLOSE' ? ['description'] : allEditable;
+
+    const data = {};
+    for (const f of allowedInMode) {
+      if (req.body[f] !== undefined && req.body[f] !== '') data[f] = req.body[f];
+    }
+
+    if (editMode === 'CLOSE') {
+      const attempted = Object.keys(req.body || {}).filter((k) => allEditable.includes(k) && !allowedInMode.includes(k));
+      if (attempted.length > 0) {
+        return error(res, 403, 'Edit mode is CLOSED — only description can be edited');
+      }
+    }
+
+    if (data.basePrice) data.basePrice = Number(data.basePrice);
+    if (data.bidIncrement) data.bidIncrement = Number(data.bidIncrement);
+
+    const updated = await prisma.auction.update({
+      where: { id },
+      data,
+      include: { seller: { select: { id: true, username: true, fullName: true } } },
+    });
+
+    return json(res, 200, { auction: updated, message: 'Auction updated', mode: editMode });
+  } catch (err) {
+    console.error('[edit auction]', err);
+    return error(res, 500, 'Failed to update auction');
+  }
+}
+
+// DELETE /api/auctions/:id — owner (DRAFT/no bids) or admin (any)
+async function handleDelete(req, res, id, userId) {
+  try {
+    const auction = await prisma.auction.findUnique({
+      where: { id },
+      select: { id: true, sellerId: true, status: true, bids: { select: { id: true }, take: 1 } },
+    });
+    if (!auction) return error(res, 404, 'Auction not found');
+
+    const requester = await prisma.user.findUnique({ where: { id: userId } });
+    const isAdmin = requester && (requester.role === 'ADMIN' || requester.role === 'SUPER_ADMIN');
+    const isOwner = auction.sellerId === userId;
+
+    if (!isAdmin) {
+      if (!isOwner) return error(res, 403, 'Not allowed — only seller or admin can delete');
+      if (auction.status !== 'DRAFT' && auction.bids.length > 0) {
+        return error(res, 403, 'Cannot delete — auction is live with bids. Contact admin.');
+      }
+    }
+
+    await prisma.bid.deleteMany({ where: { auctionId: id } });
+    await prisma.auction.delete({ where: { id } });
+
+    const deletedBy = isAdmin ? (requester.role === 'SUPER_ADMIN' ? 'super_admin' : 'admin') : 'owner';
+    return json(res, 200, { message: 'Auction deleted', id, deletedBy });
+  } catch (err) {
+    console.error('[delete auction]', err);
+    return error(res, 500, 'Failed to delete auction');
+  }
+}
+
+export default withCors(async (req, res) => {
+  const id = req.query.id;
+  if (!id) return error(res, 400, 'Missing auction id');
+
+  if (req.method === 'GET') return handleGet(req, res, id);
+
+  if (req.method === 'PUT' || req.method === 'DELETE') {
+    const payload = getUserFromHeader(req.headers.authorization);
+    if (!payload) return error(res, 401, 'Missing or invalid Authorization header');
+    if (req.method === 'PUT') return handlePut(req, res, id, payload.userId);
+    return handleDelete(req, res, id, payload.userId);
+  }
+
+  return error(res, 405, 'GET, PUT, or DELETE only');
+});

@@ -8,7 +8,7 @@ const imgUrl = (p) => {
 };
 let token = localStorage.getItem('token');
 let currentUser = null;
-let socket = null;
+// socket removed — replaced with polling (Vercel serverless can't host WebSocket)
 let authMode = 'login';
 let currentCategory = '';
 let allAuctions = [];
@@ -16,6 +16,14 @@ let locations = {};
 let bdLocations = {};
 let bdDistricts = [];
 let categories = [];
+// ---- Polling state ----
+let detailPollHandle = null;     // interval id when viewing auction detail
+let notifPollHandle = null;      // interval id for notification poll
+let chatPollHandle = null;       // interval id for chat messages poll
+let lastSeenBidId = null;        // for outbid detection
+let lastSeenMaxBid = null;       // for new_max_bid flash
+let lastAuctionStatus = null;    // for auction_ended banner
+let lastNotifCount = 0;          // for new notification detection
 
 // ---- Auth helper ----
 function authH() {
@@ -148,8 +156,7 @@ function updateThanaFilter() {
 function openAuthModal() { document.getElementById('authModal').style.display = 'flex'; }
 function closeAuthModal() { document.getElementById('authModal').style.display = 'none'; document.getElementById('authError').textContent = ''; }
 function openCreateModal() { document.getElementById('createModal').style.display = 'flex'; }
-function closeCreateModal() { document.getElementById('createModal').style.display = 'none'; }
-function comingSoon(name) { alert(name + ' — coming soon'); }
+// (closeCreateModal richer version defined later)
 
 // ---- Mobile menu (hamburger) ----
 function toggleMobileMenu() {
@@ -241,9 +248,174 @@ function logout() {
   localStorage.removeItem('token');
   token = null;
   currentUser = null;
-  if (socket) { socket.disconnect(); socket = null; }
+  stopAllPolling();
   updateAuthUI();
   loadAuctions();
+}
+
+// ---- Polling manager (replaces socket.io) ----
+function stopAllPolling() {
+  if (detailPollHandle) { clearInterval(detailPollHandle); detailPollHandle = null; }
+  if (notifPollHandle)  { clearInterval(notifPollHandle);  notifPollHandle  = null; }
+  if (chatPollHandle)   { clearInterval(chatPollHandle);   chatPollHandle   = null; }
+  lastSeenBidId = null;
+  lastSeenMaxBid = null;
+  lastAuctionStatus = null;
+  lastNotifCount = 0;
+}
+
+function startDetailPolling(auctionId) {
+  if (detailPollHandle) clearInterval(detailPollHandle);
+  lastSeenBidId = null;
+  lastSeenMaxBid = null;
+  lastAuctionStatus = null;
+  detailPollHandle = setInterval(() => pollAuctionDetail(auctionId), 4000);
+  // Kick immediately
+  pollAuctionDetail(auctionId);
+}
+
+function stopDetailPolling() {
+  if (detailPollHandle) { clearInterval(detailPollHandle); detailPollHandle = null; }
+}
+
+async function pollAuctionDetail(auctionId) {
+  if (!currentAuction || currentAuction.id !== auctionId) return;
+  try {
+    const r = await fetch(`${API_URL}/api/auctions/${auctionId}`);
+    if (!r.ok) return;
+    const data = await r.json();
+    const fresh = data.auction;
+    if (!fresh) return;
+
+    // 1. Detect status change (auction_ended equivalent)
+    if (lastAuctionStatus && lastAuctionStatus === 'ACTIVE' && fresh.status !== 'ACTIVE') {
+      const banner = document.createElement('div');
+      banner.className = 'ended-banner';
+      banner.textContent = `⏰ Auction has ended! Final amount: ৳${Number(fresh.currentMaxBid || 0).toLocaleString()}`;
+      const detail = document.getElementById('auctionDetail');
+      if (detail && !detail.querySelector('.ended-banner')) {
+        detail.appendChild(banner);
+      }
+      const bidForm = document.getElementById('bidForm');
+      if (bidForm) bidForm.style.display = 'none';
+    }
+    lastAuctionStatus = fresh.status;
+
+    // 2. Detect new max bid (new_max_bid equivalent)
+    const freshMax = Number(fresh.currentMaxBid || 0);
+    if (lastSeenMaxBid !== null && freshMax !== lastSeenMaxBid) {
+      const bidEl = document.getElementById('currentBidAmount');
+      if (bidEl) {
+        bidEl.textContent = `৳${freshMax.toLocaleString()}`;
+        flashBidUpdate();
+      }
+    }
+    lastSeenMaxBid = freshMax;
+
+    // 3. You-won detection (only if logged in & current user is winner & status is PAYMENT_PENDING)
+    if (currentUser && fresh.winnerId === currentUser.id && fresh.status === 'PAYMENT_PENDING') {
+      const existing = document.querySelector('.won-banner');
+      if (!existing) {
+        const finalAmount = Number(fresh.currentMaxBid || 0);
+        const commission = finalAmount * 0.20;
+        const banner = document.createElement('div');
+        banner.className = 'won-banner';
+        banner.innerHTML = `
+          <h3>🎉 Congratulations! You won this auction!</h3>
+          <p>Final amount: ৳${finalAmount.toLocaleString()}</p>
+          <p>Commission (20%): ৳${commission.toLocaleString()}</p>
+          <button onclick="confirmPurchase('${fresh.id}')">Confirm Purchase & Pay</button>
+          <button onclick="rejectPurchase('${fresh.id}')" style="background:#e53e3e">Reject</button>
+        `;
+        const detail = document.getElementById('auctionDetail');
+        if (detail) detail.appendChild(banner);
+      }
+    }
+
+    // 4. Outbid detection — fetch top bid, check if my last bid is no longer top
+    if (currentUser) {
+      try {
+        const br = await fetch(`${API_URL}/api/auctions/${auctionId}/bids`);
+        if (br.ok) {
+          const bdata = await br.json();
+          const bids = bdata.bids || [];
+          const topBid = bids[0];
+          if (topBid && topBid.bidderId === currentUser.id) {
+            // I am top — clear outbid flag
+            currentUser._outbid = false;
+          } else if (topBid && topBid.bidderId !== currentUser.id) {
+            // Someone else is top — if I had bid and am no longer top, alert
+            const myLastBid = bids.find(b => b.bidderId === currentUser.id);
+            if (myLastBid && !currentUser._outbidWarned) {
+              alert(`⚠️ You were outbid! New max: ৳${Number(topBid.amount).toLocaleString()}`);
+              currentUser._outbidWarned = true;
+            }
+          }
+        }
+      } catch {}
+    }
+
+    // 5. Contact unlocked detection
+    if (currentUser) {
+      try {
+        const pr = await fetch(`${API_URL}/api/payments/${auctionId}/status`, { headers: authH() });
+        if (pr.ok) {
+          const pdata = await pr.json();
+          if (pdata.unlocked && !currentUser._contactUnlockedNotified) {
+            alert('✅ Contact details unlocked! Check the contact button below.');
+            currentUser._contactUnlockedNotified = true;
+            loadAuctionDetail(auctionId);
+          }
+        }
+      } catch {}
+    }
+  } catch (e) { /* swallow */ }
+}
+
+function startNotifPolling() {
+  if (notifPollHandle) return;
+  if (!token) return;
+  lastNotifCount = 0;
+  notifPollHandle = setInterval(async () => {
+    if (!token || !currentUser) return;
+    try {
+      const r = await fetch(`${API_URL}/api/notifications?unreadOnly=1`, { headers: authH() });
+      if (!r.ok) return;
+      const data = await r.json();
+      const count = data.unread || 0;
+      if (lastNotifCount > 0 && count > lastNotifCount) {
+        // New notification — show toast
+        const latest = data.notifications?.[0];
+        if (latest) showToast(latest.message, 'info');
+      }
+      lastNotifCount = count;
+      // Update badge if function exists
+      if (typeof updateNotifBadge === 'function') updateNotifBadge(count);
+    } catch {}
+  }, 8000);
+}
+
+function startChatPolling(chatId) {
+  if (chatPollHandle) clearInterval(chatPollHandle);
+  let lastMessageCount = 0;
+  chatPollHandle = setInterval(async () => {
+    if (!token || currentChatId !== chatId) return;
+    try {
+      const r = await fetch(`${API_URL}/api/chats/${chatId}/messages`, { headers: authH() });
+      if (!r.ok) return;
+      const data = await r.json();
+      const msgs = data.messages || [];
+      if (msgs.length > lastMessageCount && lastMessageCount > 0) {
+        // New message arrived — reload messages
+        await loadChatMessages(chatId);
+      }
+      lastMessageCount = msgs.length;
+    } catch {}
+  }, 3000);
+}
+
+function stopChatPolling() {
+  if (chatPollHandle) { clearInterval(chatPollHandle); chatPollHandle = null; }
 }
 
 function togglePasswordVisibility(inputId, btnId) {
@@ -422,15 +594,7 @@ function applyEditModeToForm() {
   if (imgInput) imgInput.disabled = currentEditMode === 'CLOSE';
 }
 
-function showToast(msg) {
-  // Lightweight toast — append to body, auto-remove
-  const t = document.createElement('div');
-  t.textContent = msg;
-  t.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1F2937;color:#fff;padding:12px 20px;border-radius:8px;font-size:14px;z-index:9999;box-shadow:0 4px 12px rgba(0,0,0,0.2)';
-  document.body.appendChild(t);
-  setTimeout(() => { t.style.transition = 'opacity 0.4s'; t.style.opacity = '0'; }, 2200);
-  setTimeout(() => t.remove(), 2700);
-}
+// (richer showToast is defined later in file — kept here as comment only)
 
 // Fetch edit mode on app boot (for the edit-form behavior)
 fetchEditMode();
@@ -574,56 +738,9 @@ function switchView(view) {
 
 // ========== SOCKET ==========
 function connectSocket() {
-  if (socket) socket.disconnect();
-  socket = io(API_URL, { auth: { token } });
-  socket.on('connect', () => {
-    socket.emit('authenticate', { token });
-  });
-  socket.on('authenticated', (data) => {
-    console.log('Socket authenticated as', data.username);
-  });
-  socket.on('new_max_bid', (data) => {
-    if (currentAuction && currentAuction.id === data.auctionId) {
-      currentAuction.currentMaxBid = data.amount;
-      document.getElementById('currentBidAmount').textContent = `৳${Number(data.amount).toLocaleString()}`;
-      flashBidUpdate();
-      renderAuctionDetail(currentAuction);
-    }
-  });
-  socket.on('auction_ended', (data) => {
-    if (currentAuction && currentAuction.id === data.auctionId) {
-      document.getElementById('auctionDetail').insertAdjacentHTML('beforeend',
-        `<div class="ended-banner">⏰ Auction has ended! Final amount: ৳${Number(data.finalAmount).toLocaleString()}</div>`);
-      document.getElementById('bidForm').style.display = 'none';
-    }
-  });
-  socket.on('you_won', (data) => {
-    if (currentAuction && currentAuction.id === data.auctionId) {
-      document.getElementById('auctionDetail').insertAdjacentHTML('beforeend', `
-        <div class="won-banner">
-          <h3>🎉 Congratulations! You won this auction!</h3>
-          <p>Final amount: ৳${Number(data.amount).toLocaleString()}</p>
-          <p>Commission (20%): ৳${Number(data.commission).toLocaleString()}</p>
-          <button onclick="confirmPurchase('${data.auctionId}')">Confirm Purchase & Pay</button>
-          <button onclick="rejectPurchase('${data.auctionId}')" style="background:#e53e3e">Reject</button>
-        </div>
-      `);
-    }
-  });
-  socket.on('outbid', (data) => {
-    if (currentAuction && currentAuction.id === data.auctionId) {
-      alert('⚠️ You were outbid! New max: ৳' + Number(data.newAmount).toLocaleString());
-    }
-  });
-  socket.on('contact_unlocked', (data) => {
-    if (currentAuction && currentAuction.id === data.auctionId) {
-      alert('✅ Contact details unlocked! Check the contact button below.');
-      loadAuctionDetail(data.auctionId);
-    }
-  });
-  socket.on('bid_error', (data) => {
-    alert('❌ ' + data.message);
-  });
+  // Socket replaced by polling (Vercel serverless can't host WebSocket).
+  // This function now just starts the notification poll loop.
+  startNotifPolling();
 }
 
 function flashBidUpdate() {
@@ -738,7 +855,7 @@ async function viewAuction(id) {
   detail.style.display = 'block';
   window.scrollTo({ top: 0, behavior: 'smooth' });
   await loadAuctionDetail(id);
-  if (socket) socket.emit('join_auction', { auctionId: id });
+  startDetailPolling(id);   // poll replaces socket join_auction
 }
 
 async function loadAuctionDetail(id) {
@@ -774,7 +891,7 @@ function backToList() {
   stopCountdown();
   document.querySelectorAll('.view').forEach(v => v.style.display = 'none');
   document.getElementById('browseSection').style.display = 'block';
-  if (currentAuction && socket) socket.emit('leave_auction', { auctionId: currentAuction.id });
+  if (currentAuction) { stopDetailPolling(); }   // poll replaces socket leave_auction
   currentAuction = null;
   loadAuctions();
 }
@@ -1050,18 +1167,31 @@ function stopCountdown() {
   if (countdownInterval) { clearInterval(countdownInterval); countdownInterval = null; }
 }
 
-function placeBid(auctionId, increment) {
-  if (!socket) { alert('Connecting... try again'); return; }
+async function placeBid(auctionId, increment) {
   const amount = Number(document.getElementById('bidAmount').value);
   if (!amount || amount <= 0) { alert('Enter a valid amount'); return; }
-  socket.emit('place_bid', { auctionId, amount });
-  if (currentAuction && currentAuction.id === auctionId && currentUser) {
-    if (!currentAuction.bids) currentAuction.bids = [];
-    currentAuction.bids.push({ amount, bidderId: currentUser.id, createdAt: new Date().toISOString() });
-    currentAuction.currentMaxBid = amount;
-    renderAuctionDetail(currentAuction);
+  try {
+    const r = await fetch(`${API_URL}/api/auctions/${auctionId}/place-bid`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ amount }),
+    });
+    const data = await r.json();
+    if (!r.ok) {
+      alert('❌ ' + (data.error || 'Bid failed'));
+      return;
+    }
+    // Optimistic UI update — server is source of truth, but we update now for responsiveness
+    if (currentAuction && currentAuction.id === auctionId && currentUser) {
+      if (!currentAuction.bids) currentAuction.bids = [];
+      currentAuction.bids.unshift({ amount, bidderId: currentUser.id, createdAt: new Date().toISOString() });
+      currentAuction.currentMaxBid = amount;
+      renderAuctionDetail(currentAuction);
+    }
+    document.getElementById('bidAmount').value = '';
+  } catch (e) {
+    alert('❌ Network error: ' + e.message);
   }
-  document.getElementById('bidAmount').value = '';
 }
 
 async function confirmPurchase(auctionId) {
@@ -1104,12 +1234,7 @@ async function getContact(auctionId) {
 // ========== CREATE AUCTION ==========
 let editingAuctionId = null; // null = create mode, otherwise = edit mode
 
-function openCreateModal() {
-  document.getElementById('createModal').style.display = 'flex';
-  // Reset preview
-  const preview = document.getElementById('imagePreview');
-  preview.innerHTML = '<span class="placeholder">No images selected</span>';
-}
+// (richer openCreateModal is defined later in file)
 
 async function openEditModal(auctionId) {
   try {
@@ -1585,6 +1710,7 @@ async function openChat(chatId) {
   document.getElementById('chatList').style.display = 'none';
   document.getElementById('chatThread').style.display = 'flex';
   await loadChatMessages(chatId);
+  startChatPolling(chatId);   // poll replaces socket chat:new
 }
 
 async function loadChatMessages(chatId) {
@@ -1730,16 +1856,10 @@ function renderLotCard(a, extraClass) {
   `;
 }
 
-// ---- Init chat socket for real-time messages (optional) ----
+// ---- Init chat polling (replaces socket chat:new listener) ----
 function setupChatSocket() {
-  if (!socket || !token) return;
-  socket.on('chat:new', (data) => {
-    if (currentChatId === data.chatId && document.getElementById('chatThread').style.display !== 'none') {
-      loadChatMessages(data.chatId);
-    }
-    // refresh badge
-    loadChatList();
-  });
+  // Chat is now polled in openChat() via startChatPolling().
+  // Keeping this as a no-op so existing init() calls don't break.
 }
 
 // Open chat for a specific auction (called from detail page)

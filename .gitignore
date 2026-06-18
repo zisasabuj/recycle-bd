@@ -37,3 +37,4 @@ backend/prisma/dev.db-journal
 !backend/uploads/products/*.jpg
 !backend/uploads/products/*.png
 !backend/uploads/products/*.webp
+.vercel

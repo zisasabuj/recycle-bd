@@ -1197,6 +1197,34 @@ body::before {
   margin-bottom: var(--space-4);
 }
 
+.won-banner {
+  background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+  color: #1a202c;
+  padding: var(--space-5);
+  border-radius: var(--radius-lg);
+  text-align: center;
+  margin-bottom: var(--space-4);
+  box-shadow: 0 4px 20px rgba(255, 165, 0, 0.3);
+  animation: wonPulse 1.5s ease-in-out infinite;
+}
+.won-banner h3 { margin: 0 0 var(--space-3); font-size: 1.4em; }
+.won-banner p { margin: var(--space-1) 0; font-size: 1.05em; }
+.won-banner button {
+  margin: var(--space-2) var(--space-1);
+  padding: var(--space-3) var(--space-5);
+  border: none;
+  border-radius: var(--radius-md);
+  background: #1a202c;
+  color: white;
+  cursor: pointer;
+  font-weight: 600;
+}
+.won-banner button:hover { opacity: 0.9; transform: translateY(-1px); }
+@keyframes wonPulse {
+  0%, 100% { box-shadow: 0 4px 20px rgba(255, 165, 0, 0.3); }
+  50%      { box-shadow: 0 4px 30px rgba(255, 165, 0, 0.6); }
+}
+
 /* ============ WINNER / CREATE PAGE ============ */
 .page-head {
   max-width: 1200px;
