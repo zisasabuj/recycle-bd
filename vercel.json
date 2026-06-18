@@ -5,7 +5,7 @@
   ],
   "functions": {
     "api/[[...path]].js": {
-      "includeFiles": "api_handlers/**"
+      "includeFiles": "{api_handlers/**,_lib/**}"
     }
   },
   "env": {
