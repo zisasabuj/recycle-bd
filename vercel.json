@@ -4,10 +4,9 @@
     { "source": "/api/(.*)", "destination": "/api/$1" }
   ],
   "env": {
-    "DATABASE_URL": "@neon-database-url",
-    "IMGBB_API_KEY": "@imgbb-api-key",
-    "JWT_SECRET": "@jwt-secret",
-    "CRON_SECRET": "@cron-secret",
-    "CLIENT_URL": "@client-url"
+    "IMGBB_API_KEY": "ddf3e9cb40f997d4365c94c3a1446d67",
+    "JWT_SECRET": "recycle-bd-jwt-secret-2026-xyz-prod-only",
+    "CRON_SECRET": "recycle-bd-cron-secret-2026",
+    "CLIENT_URL": "https://auction-platform-beryl.vercel.app"
   }
 }
