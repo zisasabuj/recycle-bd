@@ -182,7 +182,9 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   if (req.method === 'OPTIONS') return res.status(200).end();
 
-  const dropFirst = req.query?.drop === '1' || req.query?.drop === 'true';
+  // Vercel Node runtime should parse query, but be defensive.
+  const url = new URL(req.url, 'https://x');
+  const dropFirst = url.searchParams.get('drop') === '1' || req.query?.drop === '1';
   const dropResults = { dropped: 0, errors: [] };
 
   if (dropFirst) {
