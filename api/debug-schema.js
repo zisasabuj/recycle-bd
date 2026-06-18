@@ -15,7 +15,13 @@ export default async function handler(req, res) {
       WHERE table_schema = 'public'
       ORDER BY table_name, ordinal_position
     `);
-    res.json({ tables, cols });
+    const enums = await prisma.$queryRawUnsafe(`
+      SELECT t.typname, e.enumlabel
+      FROM pg_type t
+      JOIN pg_enum e ON t.oid = e.enumtypid
+      ORDER BY t.typname, e.enumsortorder
+    `);
+    res.json({ tables, cols, enums });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
