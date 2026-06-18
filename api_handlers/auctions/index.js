@@ -86,7 +86,7 @@ async function handleList(req, res) {
     return json(res, 200, { auctions, total, page: Number(page), limit: Number(limit) });
   } catch (err) {
     console.error('[list auctions]', err);
-    return error(res, 500, 'Failed to list auctions');
+    return error(res, 500, 'Failed to list auctions: ' + err.message);
   }
 }
 
