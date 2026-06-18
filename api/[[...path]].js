@@ -4,6 +4,15 @@
 // URL pattern: /api/<path>   e.g. /api/auctions, /api/auctions/123/bids
 // The catch-all route receives the path as req.query.path (array).
 
+// Static imports of _lib/ — forces Vercel bundler to include them in the
+// module graph so they can resolve @prisma/client and other deps.
+import '../_lib/prisma.js';
+import '../_lib/auth.js';
+import '../_lib/middleware.js';
+import '../_lib/bdLocations.js';
+import '../_lib/imgbb.js';
+import '../_lib/payment-helpers.js';
+
 const HANDLERS_DIR = '../api_handlers';
 
 // Route table: maps (METHOD + URL-pattern) → relative file in HANDLERS_DIR
