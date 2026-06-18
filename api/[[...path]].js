@@ -13,6 +13,12 @@ import '../_lib/bdLocations.js';
 import '../_lib/imgbb.js';
 import '../_lib/payment-helpers.js';
 
+// Side-effect imports of setup handlers — forces bundler to include
+// these files in the function bundle (dynamic template imports below
+// don't get auto-resolved).
+import '../api_handlers/setup/migrate.js';
+import '../api_handlers/setup/import-dump.js';
+
 const HANDLERS_DIR = '../api_handlers';
 
 // Route table: maps (METHOD + URL-pattern) → relative file in HANDLERS_DIR
