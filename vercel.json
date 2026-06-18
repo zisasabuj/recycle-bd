@@ -1,11 +1,14 @@
 {
   "version": 2,
-  "rewrites": [
-    { "source": "/api/(.*)", "destination": "/api/$1" }
-  ],
   "functions": {
     "api/[[...path]].js": {
       "includeFiles": "{api_handlers/**,_lib/**}"
+    },
+    "api/migrate.js": {
+      "includeFiles": "node_modules/**"
+    },
+    "api/import-data.js": {
+      "includeFiles": "node_modules/**"
     }
   },
   "env": {
