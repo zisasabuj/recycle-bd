@@ -13,11 +13,10 @@ import '../_lib/bdLocations.js';
 import '../_lib/imgbb.js';
 import '../_lib/payment-helpers.js';
 
-// Side-effect imports of setup handlers — forces bundler to include
-// these files in the function bundle (dynamic template imports below
-// don't get auto-resolved).
-import '../api_handlers/setup/migrate.js';
-import '../api_handlers/setup/import-dump.js';
+// Side-effect import of the static handler registry — forces bundler
+// to include every handler file in the function bundle.
+import '../api_handlers/_registry.js';
+import HANDLERS from '../api_handlers/_registry.js';
 
 const HANDLERS_DIR = '../api_handlers';
 
@@ -160,8 +159,15 @@ export default async function handler(req, res) {
   Object.assign(req.query, route.params);
 
   try {
-    const mod = await import(`${HANDLERS_DIR}${route.file}`);
-    return await mod.default(req, res);
+    // Look up the handler in the static registry (bundler-resolved).
+    // route.file is like '/setup/migrate.js' → key 'setup/migrate'.
+    const key = route.file.replace(/^\//, '').replace(/\.js$/, '');
+    const handler = HANDLERS[key];
+    if (!handler) {
+      console.error(`[router] Handler not in registry: ${key}`);
+      return res.status(500).json({ error: `Handler not bundled: ${key}` });
+    }
+    return await handler(req, res);
   } catch (e) {
     console.error(`[router] ${req.method} ${url} → ${route.file}:`, e);
     return res.status(500).json({ error: 'Handler error', detail: e.message });
