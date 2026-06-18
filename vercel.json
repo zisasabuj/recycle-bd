@@ -3,6 +3,11 @@
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api/$1" }
   ],
+  "functions": {
+    "api/[[...path]].js": {
+      "includeFiles": "api_handlers/**"
+    }
+  },
   "env": {
     "IMGBB_API_KEY": "ddf3e9cb40f997d4365c94c3a1446d67",
     "JWT_SECRET": "recycle-bd-jwt-secret-2026-xyz-prod-only",
