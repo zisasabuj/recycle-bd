@@ -122,4 +122,33 @@ router.get('/users', authMiddleware, requireSuperAdmin, async (req, res) => {
   }
 });
 
+// PUT /api/auth/me - update current user's profile (fullName, phone, email)
+router.put('/me', authMiddleware, async (req, res) => {
+  try {
+    const { fullName, phone, email } = req.body;
+    const data = {};
+    if (fullName !== undefined) data.fullName = fullName || null;
+    if (phone !== undefined) data.phone = phone || null;
+    if (email !== undefined) {
+      if (!email.includes('@')) return res.status(400).json({ error: 'Invalid email' });
+      // Check uniqueness
+      const conflict = await prisma.user.findFirst({
+        where: { email, NOT: { id: req.userId } },
+        select: { id: true }
+      });
+      if (conflict) return res.status(409).json({ error: 'Email already in use' });
+      data.email = email;
+    }
+    const updated = await prisma.user.update({
+      where: { id: req.userId },
+      data,
+      select: { id: true, username: true, email: true, fullName: true, phone: true, role: true, rating: true, createdAt: true }
+    });
+    res.json({ user: updated });
+  } catch (err) {
+    console.error('[updateMe]', err);
+    res.status(500).json({ error: 'Failed to update profile' });
+  }
+});
+
 export default router;

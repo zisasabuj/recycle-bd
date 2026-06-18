@@ -18,7 +18,7 @@ const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, UPLOAD_DIR),
   filename: (req, file, cb) => {
     const ext = path.extname(file.originalname).toLowerCase();
-    const safeExt = ['.jpg', '.jpeg', '.png', '.webp', '.gif'].includes(ext) ? ext : '.jpg';
+    const safeExt = ['.jpg', '.jpeg', '.png', '.webp', '.gif', '.heic', '.heif'].includes(ext) ? ext : '.jpg';
     const random = crypto.randomBytes(8).toString('hex');
     const ts = Date.now();
     cb(null, `${ts}-${random}${safeExt}`);
@@ -26,13 +26,16 @@ const storage = multer.diskStorage({
 });
 
 const fileFilter = (req, file, cb) => {
-  const allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+  const allowed = [
+    'image/jpeg', 'image/png', 'image/webp', 'image/gif',
+    'image/heic', 'image/heif'
+  ];
   if (allowed.includes(file.mimetype)) cb(null, true);
-  else cb(new Error('Only JPG, PNG, WebP, GIF images allowed'), false);
+  else cb(new Error('Only JPG, PNG, WebP, GIF, HEIC images allowed'), false);
 };
 
 export const upload = multer({
   storage,
   fileFilter,
-  limits: { fileSize: 5 * 1024 * 1024, files: 5 } // 5MB per file, max 5 files
+  limits: { fileSize: 18 * 1024 * 1024, files: 5 } // 18MB per file, max 5 files
 });

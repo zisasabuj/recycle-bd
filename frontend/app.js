@@ -151,6 +151,34 @@ function openCreateModal() { document.getElementById('createModal').style.displa
 function closeCreateModal() { document.getElementById('createModal').style.display = 'none'; }
 function comingSoon(name) { alert(name + ' — coming soon'); }
 
+// ---- Mobile menu (hamburger) ----
+function toggleMobileMenu() {
+  const nav = document.getElementById('mainNav');
+  const btn = document.getElementById('hamburgerBtn');
+  if (!nav || !btn) return;
+  const isOpen = nav.classList.toggle('open');
+  btn.classList.toggle('active', isOpen);
+  btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+}
+
+function closeMobileMenu() {
+  const nav = document.getElementById('mainNav');
+  const btn = document.getElementById('hamburgerBtn');
+  if (!nav || !btn) return;
+  nav.classList.remove('open');
+  btn.classList.remove('active');
+  btn.setAttribute('aria-expanded', 'false');
+}
+
+// Close mobile menu on resize to desktop width
+let resizeTimer = null;
+window.addEventListener('resize', () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(() => {
+    if (window.innerWidth > 900) closeMobileMenu();
+  }, 150);
+});
+
 function setCategory(el, cat) {
   document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
   el.classList.add('active');
@@ -218,6 +246,232 @@ function logout() {
   loadAuctions();
 }
 
+function togglePasswordVisibility(inputId, btnId) {
+  const input = document.getElementById(inputId);
+  const btn = document.getElementById(btnId);
+  if (!input || !btn) return;
+  if (input.type === 'password') {
+    input.type = 'text';
+    btn.textContent = '🙈';
+    btn.setAttribute('aria-label', 'Hide password');
+    btn.classList.add('active');
+  } else {
+    input.type = 'password';
+    btn.textContent = '👁️';
+    btn.setAttribute('aria-label', 'Show password');
+    btn.classList.remove('active');
+  }
+}
+
+function handleProfileClick(event) {
+  event.stopPropagation();
+  if (!currentUser) {
+    // Not logged in — open login modal
+    openAuthModal();
+    return;
+  }
+  // Toggle profile dropdown
+  const menu = document.getElementById('profileMenu');
+  if (!menu) return;
+  const isOpen = menu.style.display === 'block';
+  if (isOpen) {
+    menu.style.display = 'none';
+  } else {
+    // Populate header
+    document.getElementById('pmName').textContent = currentUser.fullName || currentUser.username;
+    document.getElementById('pmEmail').textContent = currentUser.email || '';
+    menu.style.display = 'block';
+  }
+}
+
+function closeProfileMenu() {
+  const menu = document.getElementById('profileMenu');
+  if (menu) menu.style.display = 'none';
+}
+
+// Close profile menu when clicking anywhere else
+document.addEventListener('click', (e) => {
+  const menu = document.getElementById('profileMenu');
+  if (!menu || menu.style.display === 'none') return;
+  if (!e.target.closest('.topbar-user')) closeProfileMenu();
+});
+
+function openProfileModal() {
+  closeProfileMenu();
+  if (!currentUser) return;
+  document.getElementById('pfUsername').value = currentUser.username || '';
+  document.getElementById('pfEmail').value = currentUser.email || '';
+  document.getElementById('pfFullName').value = currentUser.fullName || '';
+  document.getElementById('pfPhone').value = currentUser.phone || '';
+  document.getElementById('profileError').textContent = '';
+  document.getElementById('profileSuccess').style.display = 'none';
+  document.getElementById('profileModal').style.display = 'flex';
+}
+
+// ============ v31 NEW: System Settings — Edit Mode (OPEN / CLOSE) ============
+let currentEditMode = 'OPEN';
+
+async function fetchEditMode() {
+  try {
+    const r = await fetch(`${API_URL}/api/settings/edit-mode`);
+    if (!r.ok) return;
+    const data = await r.json();
+    currentEditMode = (data.mode === 'CLOSE' || data.mode === 'OPEN') ? data.mode : 'OPEN';
+    updateModeUI();
+  } catch (e) {
+    console.warn('fetchEditMode failed:', e.message);
+  }
+}
+
+function updateModeUI() {
+  const disp = document.getElementById('currentEditModeDisplay');
+  if (disp) disp.textContent = currentEditMode;
+  const oBtn = document.getElementById('modeOpenBtn');
+  const cBtn = document.getElementById('modeCloseBtn');
+  if (oBtn) oBtn.classList.toggle('active', currentEditMode === 'OPEN');
+  if (cBtn) cBtn.classList.toggle('active', currentEditMode === 'CLOSE');
+}
+
+async function openSettingsModal() {
+  if (!currentUser || currentUser.role !== 'SUPER_ADMIN') {
+    alert('Super Admin only');
+    return;
+  }
+  document.getElementById('settingsModal').style.display = 'flex';
+  const err = document.getElementById('settingsError');
+  if (err) { err.style.display = 'none'; err.textContent = ''; }
+  await fetchEditMode();
+}
+
+function closeSettingsModal() {
+  document.getElementById('settingsModal').style.display = 'none';
+}
+
+async function selectEditMode(mode) {
+  if (!token) { alert('Sign in required'); return; }
+  const errEl = document.getElementById('settingsError');
+  if (errEl) { errEl.style.display = 'none'; errEl.textContent = ''; }
+  try {
+    const r = await fetch(`${API_URL}/api/admin/settings/edit-mode`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({ mode })
+    });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) {
+      if (errEl) { errEl.style.display = 'block'; errEl.textContent = data.error || `Failed (${r.status})`; }
+      return;
+    }
+    currentEditMode = data.mode || mode;
+    updateModeUI();
+    showToast(`✅ Edit mode set to ${currentEditMode}`);
+  } catch (e) {
+    if (errEl) { errEl.style.display = 'block'; errEl.textContent = e.message; }
+  }
+}
+
+// Apply current edit mode to the open edit form (openEditModal)
+function applyEditModeToForm() {
+  const allFieldIds = ['title', 'description', 'category', 'condition', 'basePrice', 'bidIncrement', 'city', 'area', 'district', 'thana'];
+  const editableInClose = ['description']; // CLOSE mode: only description
+
+  // Banner inside createModal (above form)
+  let banner = document.getElementById('editModeBanner');
+  const formEl = document.getElementById('createForm');
+  if (formEl && !banner) {
+    banner = document.createElement('div');
+    banner.id = 'editModeBanner';
+    banner.className = 'edit-mode-banner';
+    formEl.parentNode.insertBefore(banner, formEl);
+  }
+  if (banner) {
+    banner.className = 'edit-mode-banner ' + (currentEditMode === 'CLOSE' ? 'close' : 'open');
+    banner.innerHTML = currentEditMode === 'OPEN'
+      ? '🔓 <b>OPEN</b> mode — all fields editable, no review'
+      : '🔒 <b>CLOSE</b> mode — only description can be edited';
+    banner.style.display = editingAuctionId ? 'flex' : 'none';
+  }
+
+  allFieldIds.forEach(fid => {
+    const el = document.getElementById(fid);
+    if (!el) return;
+    const isEditable = currentEditMode === 'OPEN' || editableInClose.includes(fid);
+    el.disabled = !isEditable;
+    el.classList.toggle('field-locked', !isEditable);
+
+    // Field-level hint (only show locked fields once)
+    let hint = document.getElementById(fid + '_lockedHint');
+    if (!isEditable && !hint && el.parentNode) {
+      hint = document.createElement('span');
+      hint.id = fid + '_lockedHint';
+      hint.className = 'field-locked-hint';
+      hint.textContent = '🔒 Locked in CLOSE mode';
+      el.parentNode.appendChild(hint);
+    } else if (isEditable && hint) {
+      hint.remove();
+    }
+  });
+
+  // Image upload section: disabled in CLOSE mode (image not editable)
+  const imgLabel = document.querySelector('label[for="images"]');
+  const imgInput = document.getElementById('images');
+  if (imgLabel) {
+    imgLabel.style.opacity = currentEditMode === 'CLOSE' ? '0.5' : '1';
+    imgLabel.style.pointerEvents = currentEditMode === 'CLOSE' ? 'none' : 'auto';
+  }
+  if (imgInput) imgInput.disabled = currentEditMode === 'CLOSE';
+}
+
+function showToast(msg) {
+  // Lightweight toast — append to body, auto-remove
+  const t = document.createElement('div');
+  t.textContent = msg;
+  t.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1F2937;color:#fff;padding:12px 20px;border-radius:8px;font-size:14px;z-index:9999;box-shadow:0 4px 12px rgba(0,0,0,0.2)';
+  document.body.appendChild(t);
+  setTimeout(() => { t.style.transition = 'opacity 0.4s'; t.style.opacity = '0'; }, 2200);
+  setTimeout(() => t.remove(), 2700);
+}
+
+// Fetch edit mode on app boot (for the edit-form behavior)
+fetchEditMode();
+
+function closeProfileModal() {
+  document.getElementById('profileModal').style.display = 'none';
+}
+
+async function saveProfile(e) {
+  e.preventDefault();
+  const errorEl = document.getElementById('profileError');
+  const successEl = document.getElementById('profileSuccess');
+  errorEl.textContent = '';
+  successEl.style.display = 'none';
+
+  const email = document.getElementById('pfEmail').value.trim();
+  const fullName = document.getElementById('pfFullName').value.trim();
+  const phone = document.getElementById('pfPhone').value.trim();
+
+  try {
+    const res = await fetch(`${API_URL}/api/auth/me`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ email, fullName, phone })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Update failed');
+    // Update current user in memory + storage
+    currentUser = data.user;
+    updateAuthUI();
+    successEl.textContent = '✅ Profile updated';
+    successEl.style.display = 'block';
+    setTimeout(closeProfileModal, 900);
+  } catch (err) {
+    errorEl.textContent = err.message;
+  }
+}
+
 function updateAuthUI() {
   const name = currentUser ? currentUser.username : '';
   const role = currentUser ? (currentUser.role || 'Member') : '';
@@ -226,6 +480,11 @@ function updateAuthUI() {
   // Top header / sidebar user chip
   const userInfo = document.getElementById('userInfo');
   const topbarUser = document.getElementById('topbarUser');
+  // Settings button visibility — SUPER_ADMIN only
+  const settingsBtn = document.getElementById('settingsBtn');
+  if (settingsBtn) {
+    settingsBtn.style.display = (currentUser && currentUser.role === 'SUPER_ADMIN') ? 'inline-flex' : 'none';
+  }
   if (userInfo) {
     if (currentUser) {
       userInfo.style.display = 'flex';
@@ -246,8 +505,24 @@ function updateAuthUI() {
   }
   if (topbarUser) {
     topbarUser.innerHTML = currentUser
-      ? `<div class="avatar sm">${name.charAt(0).toUpperCase()}</div>`
-      : `<div class="avatar sm">👤</div>`;
+      ? `<div class="avatar sm" id="topbarAvatar">${name.charAt(0).toUpperCase()}</div>
+         <div class="user-meta">
+           <div class="user-name" id="topbarUserName">${name}</div>
+           <div class="user-role" id="topbarUserRole">${role}</div>
+         </div>
+         <div class="profile-menu" id="profileMenu" style="display:none">
+           <div class="profile-menu-header">
+             <div class="profile-menu-name" id="pmName">${currentUser.fullName || currentUser.username}</div>
+             <div class="profile-menu-email" id="pmEmail">${currentUser.email || ''}</div>
+           </div>
+           <button class="profile-menu-item" onclick="openProfileModal(); event.stopPropagation();">✏️ Edit Profile</button>
+           <button class="profile-menu-item" onclick="logout(); event.stopPropagation();">🚪 Logout</button>
+         </div>`
+      : `<div class="avatar sm">👤</div>
+         <div class="user-meta">
+           <div class="user-name" id="topbarUserName">Sign in</div>
+           <div class="user-role">Guest</div>
+         </div>`;
   }
 
   // Legacy header buttons (kept for backwards compat)
@@ -309,8 +584,10 @@ function connectSocket() {
   });
   socket.on('new_max_bid', (data) => {
     if (currentAuction && currentAuction.id === data.auctionId) {
+      currentAuction.currentMaxBid = data.amount;
       document.getElementById('currentBidAmount').textContent = `৳${Number(data.amount).toLocaleString()}`;
       flashBidUpdate();
+      renderAuctionDetail(currentAuction);
     }
   });
   socket.on('auction_ended', (data) => {
@@ -495,8 +772,8 @@ async function loadSimilarItems(id) {
 
 function backToList() {
   stopCountdown();
-  document.getElementById('browseSection').classList.add('view-active');
-  document.getElementById('auctionDetailSection').classList.remove('view-active');
+  document.querySelectorAll('.view').forEach(v => v.style.display = 'none');
+  document.getElementById('browseSection').style.display = 'block';
   if (currentAuction && socket) socket.emit('leave_auction', { auctionId: currentAuction.id });
   currentAuction = null;
   loadAuctions();
@@ -653,7 +930,7 @@ function renderAuctionDetail(a) {
                 <span class="prefix">৳</span>
                 <input type="number" id="bidAmount" value="${minNext}" min="${minNext}" />
                 <button class="koko-cta-btn" onclick="placeBid('${a.id}', ${Number(a.bidIncrement)})">
-                  🔨 ৳ ${minNext.toLocaleString()} Place Bid
+                  🔨 Place Bid
                 </button>
               </div>
               <p class="koko-cta-hint">Min <strong>৳ ${minNext.toLocaleString()}</strong> required · ${myTop ? `Your highest: ৳ ${Number(myTop).toLocaleString()}` : 'You haven\'t bid yet'}</p>
@@ -778,6 +1055,12 @@ function placeBid(auctionId, increment) {
   const amount = Number(document.getElementById('bidAmount').value);
   if (!amount || amount <= 0) { alert('Enter a valid amount'); return; }
   socket.emit('place_bid', { auctionId, amount });
+  if (currentAuction && currentAuction.id === auctionId && currentUser) {
+    if (!currentAuction.bids) currentAuction.bids = [];
+    currentAuction.bids.push({ amount, bidderId: currentUser.id, createdAt: new Date().toISOString() });
+    currentAuction.currentMaxBid = amount;
+    renderAuctionDetail(currentAuction);
+  }
   document.getElementById('bidAmount').value = '';
 }
 
@@ -819,13 +1102,82 @@ async function getContact(auctionId) {
 }
 
 // ========== CREATE AUCTION ==========
+let editingAuctionId = null; // null = create mode, otherwise = edit mode
+
 function openCreateModal() {
   document.getElementById('createModal').style.display = 'flex';
   // Reset preview
   const preview = document.getElementById('imagePreview');
   preview.innerHTML = '<span class="placeholder">No images selected</span>';
 }
-function closeCreateModal() { document.getElementById('createModal').style.display = 'none'; document.getElementById('createError').textContent = ''; }
+
+async function openEditModal(auctionId) {
+  try {
+    const r = await fetch(`${API_URL}/api/auctions/${auctionId}`);
+    if (!r.ok) throw new Error('fetch failed');
+    const a = await r.json();
+    const auction = a.auction || a;
+    // GUARD: if bidding already started (>=1 bid), editing is locked
+    if ((auction.bidCount || 0) > 0) {
+      showToast('Sorry, bidding already started. You cannot edit this auction.', 'err');
+      return;
+    }
+    editingAuctionId = auctionId;
+    // Pre-fill form
+    document.getElementById('title').value = auction.title || '';
+    document.getElementById('description').value = auction.description || '';
+    document.getElementById('category').value = auction.category || '';
+    document.getElementById('condition').value = auction.condition || 'USED';
+    document.getElementById('basePrice').value = auction.basePrice || '';
+    document.getElementById('bidIncrement').value = auction.bidIncrement || 100;
+    document.getElementById('city').value = auction.city || '';
+    document.getElementById('area').value = auction.area || '';
+    document.getElementById('district').value = auction.district || '';
+    document.getElementById('thana').value = auction.thana || '';
+    // Show existing images as preview
+    const preview = document.getElementById('imagePreview');
+    if (auction.images && auction.images.length > 0) {
+      preview.innerHTML = auction.images.map(u => `<div class="img-thumb existing"><img src="${escapeAttr(imgUrl(u))}"></div>`).join('') + '<div class="img-thumb new-hint">+ new image(s) will replace above</div>';
+    } else {
+      preview.innerHTML = '<span class="placeholder">No images yet</span>';
+    }
+    // Switch modal title
+    const h2 = document.querySelector('#createModal h2');
+    if (h2) h2.textContent = '✏️ Edit Auction';
+    // Reset selected files (uploading new ones will replace)
+    selectedFiles = [];
+    document.getElementById('images').value = '';
+    // Apply current edit mode (OPEN = all editable, CLOSE = description only)
+    applyEditModeToForm();
+    // Open
+    document.getElementById('createModal').style.display = 'flex';
+  } catch (e) {
+    alert('Failed to load auction: ' + e.message);
+  }
+}
+
+function closeCreateModal() {
+  document.getElementById('createModal').style.display = 'none';
+  document.getElementById('createError').textContent = '';
+  // Reset edit mode
+  editingAuctionId = null;
+  const h2 = document.querySelector('#createModal h2');
+  if (h2) h2.textContent = '＋ Post Item for Auction';
+  // Reset locked fields for fresh create
+  const allFieldIds = ['title', 'description', 'category', 'condition', 'basePrice', 'bidIncrement', 'city', 'area', 'district', 'thana'];
+  allFieldIds.forEach(fid => {
+    const el = document.getElementById(fid);
+    if (el) { el.disabled = false; el.classList.remove('field-locked'); }
+    const hint = document.getElementById(fid + '_lockedHint');
+    if (hint) hint.remove();
+  });
+  const banner = document.getElementById('editModeBanner');
+  if (banner) banner.style.display = 'none';
+  const imgInput = document.getElementById('images');
+  if (imgInput) imgInput.disabled = false;
+  const imgLabel = document.querySelector('label[for="images"]');
+  if (imgLabel) { imgLabel.style.opacity = '1'; imgLabel.style.pointerEvents = 'auto'; }
+}
 
 // Image preview + validation
 let selectedFiles = [];
@@ -862,7 +1214,8 @@ async function handleCreateAuction(e) {
   const errorEl = document.getElementById('createError');
   errorEl.textContent = '';
 
-  if (selectedFiles.length === 0) {
+  // Create mode requires at least 1 image; edit mode allows no new images
+  if (!editingAuctionId && selectedFiles.length === 0) {
     errorEl.textContent = 'Please select at least one image';
     return;
   }
@@ -883,20 +1236,59 @@ async function handleCreateAuction(e) {
 
   try {
     // Show progress
-    errorEl.innerHTML = '<div class="upload-progress">⏳ Uploading images...</div>';
+    errorEl.innerHTML = '<div class="upload-progress">⏳ ' + (editingAuctionId ? 'Saving changes' : 'Uploading images') + '...</div>';
 
-    const res = await fetch(`${API_URL}/api/upload/auction`, {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${token}` }, // NO Content-Type - browser sets multipart boundary
-      body: formData
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Failed to create');
+    let res, data;
+    if (editingAuctionId) {
+      // ===== EDIT MODE =====
+      // Image replace is optional in edit. If no new images, send JSON instead of multipart.
+      if (selectedFiles.length > 0) {
+        res = await fetch(`${API_URL}/api/auctions/${editingAuctionId}`, {
+          method: 'PUT',
+          headers: { Authorization: `Bearer ${token}` },
+          body: formData
+        });
+      } else {
+        const jsonBody = {
+          title: document.getElementById('title').value,
+          description: document.getElementById('description').value,
+          category: document.getElementById('category').value,
+          condition: document.getElementById('condition').value,
+          basePrice: document.getElementById('basePrice').value,
+          bidIncrement: document.getElementById('bidIncrement').value || 100,
+          city: document.getElementById('city').value,
+          area: document.getElementById('area').value,
+          district: document.getElementById('district').value,
+          thana: document.getElementById('thana').value
+        };
+        res = await fetch(`${API_URL}/api/auctions/${editingAuctionId}`, {
+          method: 'PUT',
+          headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify(jsonBody)
+        });
+      }
+    } else {
+      // ===== CREATE MODE =====
+      res = await fetch(`${API_URL}/api/upload/auction`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` }, // NO Content-Type - browser sets multipart boundary
+        body: formData
+      });
+    }
+    data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed');
     closeCreateModal();
-    alert('✅ Auction created with ' + data.auction.images.length + ' image(s)! 48h timer started.');
+    if (editingAuctionId) {
+      alert('✅ Auction updated!');
+    } else {
+      alert('✅ Auction created with ' + data.auction.images.length + ' image(s)! 48h timer started.');
+    }
     selectedFiles = [];
     document.getElementById('images').value = '';
     loadAuctions();
+    if (editingAuctionId === null && currentAuction) {
+      // If user was viewing the same auction, refresh detail
+    }
   } catch (err) {
     errorEl.textContent = err.message;
   }
@@ -1135,6 +1527,7 @@ async function loadDashboardView() {
         ${list.length === 0 ? '<div class="lot-empty" style="grid-column:1/-1;padding:20px">No auctions yet. Post your first item!</div>' :
           list.map(a => {
             const img = (a.images && a.images[0]) ? `<img src="${escapeAttr(imgUrl(a.images[0]))}" alt="" onerror="this.style.display='none'">` : '<div style="width:50px;height:50px;background:#F3F4F6;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:24px">📦</div>';
+            const editBtn = `<button class="dash-edit-btn" onclick="event.stopPropagation();openEditModal('${a.id}')" title="Edit this auction">✏️ Edit</button>`;
             return `
               <div class="dash-row" onclick="viewAuction('${a.id}')" style="cursor:pointer">
                 ${img}
@@ -1142,7 +1535,7 @@ async function loadDashboardView() {
                 <div class="dash-row-cell ${a.viewCount === 0 ? 'zero' : ''}">${a.viewCount || 0}</div>
                 <div class="dash-row-cell ${a.bidCount === 0 ? 'zero' : ''}">${a.bidCount || 0}</div>
                 <div class="dash-row-cell ${a.watchCount === 0 ? 'zero' : ''}">${a.watchCount || 0}</div>
-                <div class="dash-row-cell">${a.status}</div>
+                <div class="dash-row-cell">${a.status} ${a.bidCount === 0 ? editBtn : ''}</div>
               </div>`;
           }).join('')
         }

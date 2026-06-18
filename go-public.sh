@@ -4,7 +4,7 @@
 set -e
 
 BACKEND_DIR="$HOME/auction-platform/backend"
-TUNNEL_BIN="/tmp/cloudflared"
+TUNNEL_BIN="/usr/bin/cloudflared"
 LOG_DIR="$HOME/.recycle-logs"
 mkdir -p "$LOG_DIR"
 

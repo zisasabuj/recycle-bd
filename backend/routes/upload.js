@@ -14,26 +14,57 @@ const JPEG_QUALITY = 78;  // balance size vs quality
 const WEBP_QUALITY = 80;
 
 /**
- * Resize an uploaded image: shrink to MAX_WIDTH x MAX_HEIGHT max, convert to JPEG
- * Returns absolute path of the new file (overwrites original).
+ * Resize an uploaded image: shrink to MAX_WIDTH x MAX_HEIGHT max, convert to JPEG.
+ * Handles HEIC/HEIF (iPhone) by converting to JPEG first, since sharp can't decode HEIC.
+ * Returns the absolute path of the final file (may be renamed .heic → .jpg).
  */
 async function processImage(filePath) {
   const ext = path.extname(filePath).toLowerCase();
-  const tmpPath = filePath + '.tmp.jpg';
-  await sharp(filePath)
-    .rotate()                          // auto-rotate based on EXIF
-    .resize({
-      width: MAX_WIDTH,
-      height: MAX_HEIGHT,
-      fit: 'inside',                   // shrink to fit, never upscale
-      withoutEnlargement: true
-    })
-    .jpeg({ quality: JPEG_QUALITY, progressive: true, mozjpeg: true })
-    .toFile(tmpPath);
-  // Replace original with optimized version
-  fs.unlinkSync(filePath);
-  fs.renameSync(tmpPath, filePath);
-  return filePath;
+  let processPath = filePath;
+  let outExt = ext;
+
+  // HEIC/HEIF → JPEG conversion (sharp can't decode HEIC by default)
+  if (ext === '.heic' || ext === '.heif') {
+    try {
+      const { default: heicConvert } = await import('heic-convert');
+      const inputBuffer = fs.readFileSync(filePath);
+      const jpegBuffer = await heicConvert({
+        buffer: inputBuffer,
+        format: 'JPEG',
+        quality: 0.9
+      });
+      const newPath = filePath.replace(/\.(heic|heif)$/i, '.jpg');
+      fs.writeFileSync(newPath, jpegBuffer);
+      fs.unlinkSync(filePath);
+      processPath = newPath;
+      outExt = '.jpg';
+    } catch (e) {
+      console.error('HEIC conversion failed', filePath, e);
+      // Fall through with original file — sharp will fail gracefully downstream
+    }
+  }
+
+  // Resize (sharp handles JPEG, PNG, WebP, GIF)
+  const tmpPath = processPath + '.tmp.jpg';
+  try {
+    await sharp(processPath)
+      .rotate()                          // auto-rotate based on EXIF
+      .resize({
+        width: MAX_WIDTH,
+        height: MAX_HEIGHT,
+        fit: 'inside',                   // shrink to fit, never upscale
+        withoutEnlargement: true
+      })
+      .jpeg({ quality: JPEG_QUALITY, progressive: true, mozjpeg: true })
+      .toFile(tmpPath);
+    fs.unlinkSync(processPath);
+    fs.renameSync(tmpPath, processPath);
+  } catch (e) {
+    // Clean up tmp if sharp failed
+    try { fs.unlinkSync(tmpPath); } catch {}
+    throw e;
+  }
+  return { path: processPath, ext: outExt };
 }
 
 /**
@@ -46,13 +77,19 @@ router.post('/image', authMiddleware, upload.array('images', 5), async (req, res
     if (!req.files || req.files.length === 0) {
       return res.status(400).json({ error: 'No files uploaded' });
     }
-    // Resize all images server-side
+    // Resize all images server-side (HEIC → JPEG happens inside processImage)
+    const urls = [];
     for (const f of req.files) {
-      try { await processImage(f.path); } catch (e) { console.error('resize failed', f.path, e); }
+      try {
+        const result = await processImage(f.path);
+        // Build URL from the final file extension (HEIC may have been renamed to .jpg)
+        const finalFilename = f.filename.replace(/\.(heic|heif)$/i, result.ext);
+        urls.push(`${protocol}://${host}${UPLOADS_PUBLIC_PATH}/${finalFilename}`);
+      } catch (e) {
+        console.error('resize failed', f.path, e);
+        // Skip failed file but continue with others
+      }
     }
-    const host = req.get('host');
-    const protocol = req.protocol;
-    const urls = req.files.map(f => `${protocol}://${host}${UPLOADS_PUBLIC_PATH}/${f.filename}`);
     res.json({ urls });
   } catch (err) {
     console.error('[upload/image]', err);
@@ -82,11 +119,17 @@ router.post('/auction', authMiddleware, upload.array('images', 5), async (req, r
 
     const host = req.get('host');
     const protocol = req.protocol;
-    // Resize images before storing URLs
+    // Resize images (HEIC → JPEG happens inside processImage), build final URLs
+    const images = [];
     for (const f of (req.files || [])) {
-      try { await processImage(f.path); } catch (e) { console.error('resize failed', f.path, e); }
+      try {
+        const result = await processImage(f.path);
+        const finalFilename = f.filename.replace(/\.(heic|heif)$/i, result.ext);
+        images.push(`${protocol}://${host}${UPLOADS_PUBLIC_PATH}/${finalFilename}`);
+      } catch (e) {
+        console.error('resize failed', f.path, e);
+      }
     }
-    const images = (req.files || []).map(f => `${protocol}://${host}${UPLOADS_PUBLIC_PATH}/${f.filename}`);
 
     const { scheduleAuctionEnd } = await import('../workers/auctionTimer.js');
     const endsAt = new Date(Date.now() + 48 * 60 * 60 * 1000);
@@ -121,7 +164,7 @@ router.post('/auction', authMiddleware, upload.array('images', 5), async (req, r
 // Error handler for multer (file too large, etc.)
 router.use((err, req, res, next) => {
   if (err instanceof multer.MulterError) {
-    if (err.code === 'LIMIT_FILE_SIZE') return res.status(413).json({ error: 'File too large (max 5MB)' });
+    if (err.code === 'LIMIT_FILE_SIZE') return res.status(413).json({ error: 'File too large (max 18MB)' });
     if (err.code === 'LIMIT_FILE_COUNT') return res.status(400).json({ error: 'Too many files (max 5)' });
     return res.status(400).json({ error: err.message });
   }
@@ -130,3 +173,4 @@ router.use((err, req, res, next) => {
 });
 
 export default router;
+export { processImage };

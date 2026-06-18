@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Recycle — Sealed-Bid Auctions Bangladesh</title>
-  <link rel="stylesheet" href="styles.css?v=30">
+  <link rel="stylesheet" href="styles.css?v=33">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -25,36 +25,51 @@
              oninput="searchDebounce()">
     </div>
 
-    <nav class="nav">
-      <a class="nav-item active" data-view="browse" onclick="switchView('browse')">
+    <nav class="nav" id="mainNav">
+      <a class="nav-item active" data-view="browse" onclick="switchView('browse'); closeMobileMenu();">
         <span class="nav-ico">📊</span> Browse
       </a>
-      <a class="nav-item" data-view="endingSoon" onclick="switchView('endingSoon')">
+      <a class="nav-item" data-view="endingSoon" onclick="switchView('endingSoon'); closeMobileMenu();">
         <span class="nav-ico">🔥</span> Ending Soon
       </a>
-      <a class="nav-item" data-view="watchlist" onclick="switchView('watchlist')">
+      <a class="nav-item" data-view="watchlist" onclick="switchView('watchlist'); closeMobileMenu();">
         <span class="nav-ico">❤️</span> Watchlist
       </a>
-      <a class="nav-item" data-view="dashboard" onclick="switchView('dashboard')">
+      <a class="nav-item" data-view="dashboard" onclick="switchView('dashboard'); closeMobileMenu();">
         <span class="nav-ico">📈</span> Dashboard
       </a>
-      <a class="nav-item" onclick="openCreateModal()">
+      <a class="nav-item" onclick="openCreateModal(); closeMobileMenu();">
         <span class="nav-ico">＋</span> Create
       </a>
-      <a class="nav-item" onclick="viewWinnerDemo()">
+      <a class="nav-item" onclick="viewWinnerDemo(); closeMobileMenu();">
         <span class="nav-ico">🏆</span> Won
       </a>
     </nav>
 
+    <button class="hamburger" id="hamburgerBtn" onclick="toggleMobileMenu()" aria-label="Menu" title="Menu">
+      <span class="hamburger-icon">☰</span>
+    </button>
+
     <div class="topbar-right">
+      <button class="icon-btn" id="settingsBtn" onclick="openSettingsModal()" style="display:none" title="Settings (Admin only)">
+        ⚙️
+      </button>
       <button class="icon-btn" title="Notifications" onclick="comingSoon('Notifications')">
         🔔<span class="notif-dot" id="notifDot" style="display:none"></span>
       </button>
-      <div class="topbar-user" id="topbarUser" onclick="openAuthModal()">
-        <div class="avatar sm">👤</div>
+      <div class="topbar-user" id="topbarUser" onclick="handleProfileClick(event)">
+        <div class="avatar sm" id="topbarAvatar">👤</div>
         <div class="user-meta">
           <div class="user-name" id="topbarUserName">Sign in</div>
-          <div class="user-role">Guest</div>
+          <div class="user-role" id="topbarUserRole">Guest</div>
+        </div>
+        <div class="profile-menu" id="profileMenu" style="display:none">
+          <div class="profile-menu-header">
+            <div class="profile-menu-name" id="pmName">—</div>
+            <div class="profile-menu-email" id="pmEmail">—</div>
+          </div>
+          <button class="profile-menu-item" onclick="openProfileModal(); event.stopPropagation();">✏️ Edit Profile</button>
+          <button class="profile-menu-item" onclick="logout(); event.stopPropagation();">🚪 Logout</button>
         </div>
       </div>
     </div>
@@ -253,13 +268,62 @@
       <form id="authForm" onsubmit="handleAuth(event)">
         <label>Username<input type="text" id="authUsername" required></label>
         <label id="emailLabel" style="display:none">Email<input type="email" id="authEmail"></label>
-        <label>Password<input type="password" id="authPassword" required></label>
+        <label class="password-wrap">Password
+          <div class="password-field">
+            <input type="password" id="authPassword" required>
+            <button type="button" class="toggle-pw" id="toggleAuthPw" aria-label="Show password" onclick="togglePasswordVisibility('authPassword', 'toggleAuthPw')">👁️</button>
+          </div>
+        </label>
         <label id="fullNameLabel" style="display:none">Full Name (optional)<input type="text" id="authFullName"></label>
         <label id="phoneLabel" style="display:none">Phone (optional)<input type="text" id="authPhone"></label>
         <button type="submit" class="btn-primary" id="authSubmit">Login</button>
         <p id="authSwitch" class="link" onclick="toggleAuthMode()">Don't have an account? Register</p>
         <p id="authError" class="error"></p>
       </form>
+    </div>
+  </div>
+
+  <!-- ============ PROFILE EDIT MODAL ============ -->
+  <div id="profileModal" class="modal" style="display:none">
+    <div class="modal-content">
+      <span class="close" onclick="closeProfileModal()">&times;</span>
+      <h2>Edit Profile</h2>
+      <p class="modal-sub">Update your name, phone, or email</p>
+      <form id="profileForm" onsubmit="saveProfile(event)">
+        <label>Username (read-only)<input type="text" id="pfUsername" disabled></label>
+        <label>Email<input type="email" id="pfEmail"></label>
+        <label>Full Name<input type="text" id="pfFullName"></label>
+        <label>Phone<input type="text" id="pfPhone"></label>
+        <button type="submit" class="btn-primary">Save Changes</button>
+        <p id="profileError" class="error"></p>
+        <p id="profileSuccess" class="success" style="display:none"></p>
+      </form>
+    </div>
+  </div>
+
+  <!-- ============ SETTINGS MODAL (Super Admin Only) ============ -->
+  <div id="settingsModal" class="modal" style="display:none">
+    <div class="modal-content">
+      <span class="close" onclick="closeSettingsModal()">&times;</span>
+      <h2>⚙️ System Settings</h2>
+      <p class="modal-sub">Super Admin only — controls how auction owners can edit posts</p>
+
+      <h3 style="margin-top:20px;font-size:14px;color:#6B7280;text-transform:uppercase;letter-spacing:0.5px">Auction Edit Mode</h3>
+      <div class="settings-modes">
+        <button class="mode-card" id="modeOpenBtn" onclick="selectEditMode('OPEN')" type="button">
+          <div class="mode-icon">🔓</div>
+          <div class="mode-title">OPEN</div>
+          <div class="mode-desc">Owners can edit <b>any field</b> anytime. No review needed.</div>
+        </button>
+        <button class="mode-card" id="modeCloseBtn" onclick="selectEditMode('CLOSE')" type="button">
+          <div class="mode-icon">🔒</div>
+          <div class="mode-title">CLOSE</div>
+          <div class="mode-desc">Owners can only edit <b>description</b>. Other fields locked.</div>
+        </button>
+      </div>
+
+      <div class="settings-current">Current mode: <b id="currentEditModeDisplay">—</b></div>
+      <p id="settingsError" class="error" style="display:none"></p>
     </div>
   </div>
 
@@ -277,9 +341,9 @@
           <label class="image-upload-label" for="images">
             <span class="upload-icon">📷</span>
             <span class="upload-text">Click to upload images</span>
-            <span class="upload-hint">JPG/PNG/WebP — up to 5 images, 5MB each</span>
+            <span class="upload-hint">JPG/PNG/WebP/HEIC — up to 5 images, 18MB each</span>
           </label>
-          <input type="file" id="images" accept="image/jpeg,image/jpg,image/png,image/webp,image/gif" multiple style="display:none">
+          <input type="file" id="images" accept="image/jpeg,image/jpg,image/png,image/webp,image/gif,image/heic,image/heif,.heic,.heif" multiple style="display:none">
           <div id="imagePreview" class="image-preview"></div>
         </div>
 
@@ -335,6 +399,6 @@
       </form>
     </div>
   </div>
-  <script src="app.js?v=30"></script>
+  <script src="app.js?v=33"></script>
 </body>
 </html>

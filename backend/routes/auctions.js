@@ -3,6 +3,15 @@ import { prisma } from '../lib/prisma.js';
 import { authMiddleware, requireRole } from '../lib/auth.js';
 import { scheduleAuctionEnd } from '../workers/auctionTimer.js';
 import { BD_LOCATIONS, BD_DISTRICTS, BD_STATS, getThanas } from '../lib/bdLocations.js';
+import multer from 'multer';
+import path from 'path';
+import fs from 'fs';
+import { fileURLToPath } from 'url';
+import { processImage } from './upload.js';
+import { UPLOADS_PUBLIC_PATH, UPLOADS_ABSOLUTE_DIR } from '../lib/upload.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const router = express.Router();
 
@@ -335,6 +344,102 @@ router.delete('/:id', authMiddleware, async (req, res) => {
   } catch (err) {
     console.error('[delete auction]', err);
     res.status(500).json({ error: 'Failed to delete auction' });
+  }
+});
+
+// PUT /api/auctions/:id - owner-only update of editable fields
+// Multipart optional: new images (replaces existing). JSON body if no image change.
+// Editable: title, description, category, condition, basePrice, bidIncrement, city, area, district, thana, images
+// NOT editable: sellerId, status, endsAt, createdAt (preserves auction integrity & 48h timer)
+// Edit mode:
+//   OPEN  = owner can edit any field
+//   CLOSE = owner can ONLY edit description (other fields locked, even for admin-on-behalf)
+const editUpload = multer({
+  storage: multer.diskStorage({
+    destination: (req, file, cb) => {
+      if (!fs.existsSync(UPLOADS_ABSOLUTE_DIR)) fs.mkdirSync(UPLOADS_ABSOLUTE_DIR, { recursive: true });
+      cb(null, UPLOADS_ABSOLUTE_DIR);
+    },
+    filename: (req, file, cb) => {
+      const ext = path.extname(file.originalname).toLowerCase();
+      const safeExt = ['.jpg', '.jpeg', '.png', '.webp', '.gif', '.heic', '.heif'].includes(ext) ? ext : '.jpg';
+      cb(null, `${Date.now()}-${Math.round(Math.random() * 1e9)}${safeExt}`);
+    }
+  }),
+  limits: { fileSize: 18 * 1024 * 1024 }, // 18 MB
+  fileFilter: (req, file, cb) => {
+    const allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/heic', 'image/heif'];
+    cb(null, allowed.includes(file.mimetype));
+  }
+});
+router.put('/:id', authMiddleware, editUpload.array('images', 5), async (req, res) => {
+  try {
+    const auction = await prisma.auction.findUnique({ where: { id: req.params.id } });
+    if (!auction) return res.status(404).json({ error: 'Auction not found' });
+
+    // Owner or admin
+    const requester = await prisma.user.findUnique({ where: { id: req.user.userId } });
+    const isOwner = auction.sellerId === req.user.userId;
+    const isAdmin = requester && (requester.role === 'ADMIN' || requester.role === 'SUPER_ADMIN');
+    if (!isOwner && !isAdmin) return res.status(403).json({ error: 'Only the seller or admin can edit' });
+
+    // Read current edit mode setting
+    const setting = await prisma.systemSetting.findUnique({ where: { key: 'edit_mode' } });
+    const editMode = (setting && (setting.value === 'CLOSE' || setting.value === 'OPEN')) ? setting.value : 'OPEN';
+
+    // Build update payload — only fields actually provided
+    const allEditable = ['title', 'description', 'category', 'condition', 'basePrice', 'bidIncrement', 'city', 'area', 'district', 'thana', 'images'];
+    const allowedInMode = editMode === 'CLOSE' ? ['description'] : allEditable;
+
+    const data = {};
+    for (const f of allowedInMode) {
+      if (req.body[f] !== undefined && req.body[f] !== '') data[f] = req.body[f];
+    }
+
+    // In CLOSE mode, detect attempts to edit other fields → reject
+    if (editMode === 'CLOSE') {
+      const attempted = Object.keys(req.body).filter(k => allEditable.includes(k) && !allowedInMode.includes(k));
+      const hasNewImages = req.files && req.files.length > 0;
+      if (attempted.length > 0 || hasNewImages) {
+        return res.status(403).json({
+          error: 'Edit mode is CLOSED — only description can be edited',
+          mode: 'CLOSE',
+          rejected: [...attempted, ...(hasNewImages ? ['images'] : [])]
+        });
+      }
+    }
+
+    // Numeric fields
+    if (data.basePrice) data.basePrice = Number(data.basePrice);
+    if (data.bidIncrement) data.bidIncrement = Number(data.bidIncrement);
+
+    // Handle image replacement if new files uploaded (only allowed in OPEN mode — checked above)
+    if (req.files && req.files.length > 0) {
+      const host = req.get('host');
+      const protocol = req.protocol;
+      const images = [];
+      for (const f of req.files) {
+        try { await processImage(f.path); } catch (e) { console.error('processImage err', e); }
+        // HEIC was renamed to .jpg inside processImage — get actual filename
+        const dir = path.dirname(f.path);
+        const allFiles = fs.readdirSync(dir).filter(x => x.startsWith(path.basename(f.path, path.extname(f.path))));
+        const finalName = allFiles[0] || f.filename;
+        images.push(`${protocol}://${host}${UPLOADS_PUBLIC_PATH}/${finalName}`);
+      }
+      data.images = images;
+    }
+
+    const updated = await prisma.auction.update({
+      where: { id: req.params.id },
+      data,
+      include: { seller: { select: { id: true, username: true, fullName: true } } }
+    });
+
+    res.json({ auction: updated, message: 'Auction updated', mode: editMode });
+  } catch (err) {
+    console.error('[edit auction]', err);
+    if (err.code === 'LIMIT_FILE_SIZE') return res.status(413).json({ error: 'File too large (max 18MB)' });
+    res.status(500).json({ error: 'Failed to update auction' });
   }
 });
 

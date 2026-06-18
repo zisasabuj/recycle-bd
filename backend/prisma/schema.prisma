@@ -52,7 +52,7 @@ model User {
   watchlist     Watchlist[]
   chatsAsBuyer  Chat[]         @relation("ChatBuyer")
   chatsAsSeller Chat[]         @relation("ChatSeller")
-  chatMessages  ChatMessage[]
+  chatMessages  ChatMessage[] @relation("ChatMessagesByUser")
 }
 
 model Auction {
@@ -188,10 +188,20 @@ model ChatMessage {
   chatId    String
   chat      Chat      @relation(fields: [chatId], references: [id], onDelete: Cascade)
   senderId  String
-  sender    User      @relation(fields: [senderId], references: [id])
+  sender    User      @relation("ChatMessagesByUser", fields: [senderId], references: [id])
   text      String
   createdAt DateTime  @default(now())
   readAt    DateTime?
 
   @@index([chatId, createdAt])
+}
+
+// ========== v31 NEW: System settings (admin toggleable) ==========
+model SystemSetting {
+  key        String   @id
+  value      String
+  updatedBy  String?
+  updatedAt  DateTime @updatedAt
+
+  @@index([key])
 }
