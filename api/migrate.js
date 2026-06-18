@@ -38,16 +38,14 @@ const STATEMENTS = [
      CREATE TYPE "NotificationType" AS ENUM ('BID_PLACED','BID_OUTBID','AUCTION_WON','AUCTION_ENDED','PAYMENT_RECEIVED','NEW_MESSAGE');
    EXCEPTION WHEN duplicate_object THEN null; END $$;`,
 
-  // User (matches ACTUAL production schema from local Docker dump)
+  // User (matches ACTUAL production schema used by app on Vercel)
   `CREATE TABLE IF NOT EXISTS "User" (
      "id" TEXT PRIMARY KEY,
-     "username" TEXT UNIQUE NOT NULL,
      "email" TEXT UNIQUE NOT NULL,
-     "passwordHash" TEXT NOT NULL,
-     "fullName" TEXT,
      "phone" TEXT,
+     "name" TEXT,
+     "passwordHash" TEXT NOT NULL,
      "role" "UserRole" NOT NULL DEFAULT 'USER',
-     "rating" DOUBLE PRECISION NOT NULL DEFAULT 0,
      "avatar" TEXT,
      "city" TEXT,
      "district" TEXT,
