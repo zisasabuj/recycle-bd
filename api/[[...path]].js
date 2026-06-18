@@ -83,6 +83,8 @@ const routes = [
   // Setup (one-time)
   { method: 'POST', pattern: '/setup/import-dump',                            file: '/setup/import-dump.js' },
   { method: 'GET',  pattern: '/setup/import-dump',                            file: '/setup/import-dump.js' },
+  { method: 'POST', pattern: '/setup/migrate',                               file: '/setup/migrate.js' },
+  { method: 'GET',  pattern: '/setup/migrate',                               file: '/setup/migrate.js' },
 
   // Cron (disabled on Hobby, but kept for compatibility)
   { method: 'GET',  pattern: '/cron/expire',                                  file: '/cron/expire.js' },
