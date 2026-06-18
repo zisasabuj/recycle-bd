@@ -15,9 +15,24 @@ const LOCATIONS = {
 };
 const CATEGORIES = ['Electronics', 'Furniture', 'Clothing', 'Vehicles', 'Books', 'Sports', 'Home Appliances', 'Other'];
 
+// Lazy expiry: when listing, also mark expired ACTIVE auctions as ENDED
+// (replaces cron — Vercel Hobby plan has no cron jobs)
+async function expireStaleAuctions() {
+  try {
+    const result = await prisma.auction.updateMany({
+      where: { status: 'ACTIVE', endsAt: { lt: new Date() } },
+      data: { status: 'ENDED' },
+    });
+    if (result.count > 0) console.log(`[expire] marked ${result.count} auctions ENDED`);
+  } catch (e) {
+    console.error('[expire] failed:', e.message);
+  }
+}
+
 // GET handler — list active auctions (filters + sort + pagination)
 async function handleList(req, res) {
   try {
+    await expireStaleAuctions();
     const { city, area, district, thana, category, status = 'ACTIVE', search, sort, page = 1, limit = 20, endingIn } = req.query || {};
     const skip = (Number(page) - 1) * Number(limit);
 

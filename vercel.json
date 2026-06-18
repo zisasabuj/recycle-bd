@@ -3,12 +3,6 @@
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api/$1" }
   ],
-  "crons": [
-    {
-      "path": "/api/cron/expire",
-      "schedule": "0 */6 * * *"
-    }
-  ],
   "env": {
     "DATABASE_URL": "@neon-database-url",
     "IMGBB_API_KEY": "@imgbb-api-key",
