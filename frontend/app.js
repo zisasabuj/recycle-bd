@@ -148,7 +148,7 @@ function updateThanas() {
 
 // Populate District filter dropdown from bdLocations (64 districts)
 function populateDistrictFilter() {
-  const districtFilter = document.getElementById('districtFilter');
+  const districtFilter = document.getElementById('filterDistrict');
   if (!districtFilter) return;
   districtFilter.innerHTML = '<option value="">All Districts</option>';
   if (bdDistricts && bdDistricts.length) {
@@ -165,8 +165,8 @@ function populateDistrictFilter() {
 
 // Cascade Thana (Area) dropdown from selected District
 function updateThanaFilter() {
-  const district = document.getElementById('districtFilter').value;
-  const thanaSelect = document.getElementById('thanaFilter');
+  const district = document.getElementById('filterDistrict').value;
+  const thanaSelect = document.getElementById('filterThana');
   if (!thanaSelect) return;
   thanaSelect.innerHTML = '<option value="">All Areas</option>';
   if (district && bdLocations[district]) {
@@ -900,8 +900,8 @@ function flashBidUpdate() {
 let currentAuction = null;
 
 async function loadAuctions() {
-  const district = document.getElementById('districtFilter')?.value || '';
-  const thana = document.getElementById('thanaFilter')?.value || '';
+  const district = document.getElementById('filterDistrict')?.value || '';
+  const thana = document.getElementById('filterThana')?.value || '';
   const category = currentCategory || '';
   const search = document.getElementById('searchInput')?.value || '';
   const sort = document.getElementById('topSort')?.value || 'ending';
