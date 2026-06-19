@@ -77,6 +77,12 @@ const routes = [
   { method: 'GET',   verb: 'admin-edit-mode',    file: '/admin/settings/edit-mode.js' },
   { method: 'POST',  verb: 'admin-edit-mode',    file: '/admin/settings/edit-mode.js' },
   { method: 'PATCH', verb: 'admin-edit-mode',    file: '/admin/settings/edit-mode.js' },
+
+  // Hero stats (flattened: was /api/settings/hero-stats, /api/admin/settings/hero-stats)
+  // Vercel Hobby: catch-all only matches single-segment, so flatten here.
+  // Handler internally distinguishes GET (public) vs PUT (SUPER_ADMIN only).
+  { method: 'GET', verb: 'hero-stats', file: '/settings/hero-stats.js' },
+  { method: 'PUT', verb: 'hero-stats', file: '/settings/hero-stats.js' },
 ];
 
 export default async function handler(req, res) {

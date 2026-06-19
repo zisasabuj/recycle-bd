@@ -589,7 +589,7 @@ async function openSettingsModal() {
 async function loadHeroStatsIntoForm() {
   // Pre-fill inputs with current admin-set values
   try {
-    const r = await fetch(`${API_URL}/api/settings/hero-stats`);
+    const r = await fetch(`${API_URL}/api/x/hero-stats`);
     if (!r.ok) return;
     const s = await r.json();
     const set = (id, v) => { const el = document.getElementById(id); if (el) el.value = v || ''; };
@@ -614,7 +614,7 @@ async function saveHeroStats() {
   if (msg) { msg.style.display = 'none'; }
   if (errEl) { errEl.style.display = 'none'; }
   try {
-    const r = await fetch(`${API_URL}/api/admin/settings/hero-stats`, {
+    const r = await fetch(`${API_URL}/api/x/hero-stats`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
       body: JSON.stringify(body)
@@ -955,7 +955,7 @@ function updateHeroStats(auctions) {
 
 async function loadAdminHeroOverrides() {
   try {
-    const r = await fetch(`${API_URL}/api/settings/hero-stats`);
+    const r = await fetch(`${API_URL}/api/x/hero-stats`);
     if (!r.ok) return;
     const s = await r.json();
     const map = {
