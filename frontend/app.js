@@ -67,9 +67,9 @@ async function init() {
 async function loadMeta() {
   try {
     const [locRes, catRes, bdRes] = await Promise.all([
-      fetch(`${API_URL}/api/auction/meta/locations`),
-      fetch(`${API_URL}/api/auction/meta/categories`),
-      fetch(`${API_URL}/api/auction/meta/bd-locations`)
+      fetch(`${API_URL}/api/x/locations`),
+      fetch(`${API_URL}/api/x/categories`),
+      fetch(`${API_URL}/api/x/bd-locations`)
     ]);
     locations = (await locRes.json()).locations;
     categories = (await catRes.json()).categories;
@@ -335,7 +335,7 @@ async function pollAuctionDetail(auctionId) {
     // 4. Outbid detection — fetch top bid, check if my last bid is no longer top
     if (currentUser) {
       try {
-        const br = await fetch(`${API_URL}/api/auction/${auctionId}/bids`);
+        const br = await fetch(`${API_URL}/api/x/bids?id=${auctionId}`);
         if (br.ok) {
           const bdata = await br.json();
           const bids = bdata.bids || [];
@@ -869,7 +869,7 @@ async function loadAuctionDetail(id) {
 
 async function loadSimilarItems(id) {
   try {
-    const r = await fetch(`${API_URL}/api/auction/${id}/similar`);
+    const r = await fetch(`${API_URL}/api/x/similar?id=${id}`);
     if (!r.ok) return;
     const data = await r.json();
     const list = data.auctions || [];
@@ -1171,7 +1171,7 @@ async function placeBid(auctionId, increment) {
   const amount = Number(document.getElementById('bidAmount').value);
   if (!amount || amount <= 0) { alert('Enter a valid amount'); return; }
   try {
-    const r = await fetch(`${API_URL}/api/auction/${auctionId}/place-bid`, {
+    const r = await fetch(`${API_URL}/api/x/place-bid?id=${auctionId}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       body: JSON.stringify({ amount }),
@@ -1195,7 +1195,7 @@ async function placeBid(auctionId, increment) {
 }
 
 async function confirmPurchase(auctionId) {
-  const res = await fetch(`${API_URL}/api/auction/${auctionId}/confirm`, {
+  const res = await fetch(`${API_URL}/api/x/confirm?id=${auctionId}`, {
     method: 'POST', headers: { Authorization: `Bearer ${token}` }
   });
   const data = await res.json();
@@ -1213,7 +1213,7 @@ async function confirmPurchase(auctionId) {
 }
 
 async function rejectPurchase(auctionId) {
-  await fetch(`${API_URL}/api/auction/${auctionId}/reject`, {
+  await fetch(`${API_URL}/api/x/reject?id=${auctionId}`, {
     method: 'POST', headers: { Authorization: `Bearer ${token}` }
   });
   alert('Rejection registered. Will pass to 2nd highest bidder.');
@@ -1630,7 +1630,7 @@ async function loadDashboardView() {
     return;
   }
   try {
-    const r = await fetch(`${API_URL}/api/auction/seller/dashboard`, { headers: authH() });
+    const r = await fetch(`${API_URL}/api/x/seller-dashboard`, { headers: authH() });
     if (!r.ok) throw new Error('fetch failed');
     const data = await r.json();
     const t = data.totals || {};

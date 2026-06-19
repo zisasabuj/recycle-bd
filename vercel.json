@@ -7,6 +7,9 @@
     "api/auction/[[...slug]].js": {
       "includeFiles": "{api_handlers/**,_lib/**}"
     },
+    "api/x/[[...slug]].js": {
+      "includeFiles": "{api_handlers/**,_lib/**}"
+    },
     "api/migrate.js": {
       "includeFiles": "node_modules/**"
     },
