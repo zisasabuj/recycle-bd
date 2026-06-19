@@ -91,8 +91,9 @@ async function handlePut(req, res, id, userId) {
 
     return json(res, 200, { auction: updated, message: 'Auction updated', mode: editMode });
   } catch (err) {
-    console.error('[edit auction]', err);
-    return error(res, 500, 'Failed to update auction');
+    console.error('[edit auction]', err && err.message ? err.message : err);
+    console.error('[edit auction stack]', err && err.stack ? err.stack : 'no stack');
+    return error(res, 500, 'Failed to update auction: ' + (err && err.message ? err.message : 'unknown'));
   }
 }
 
