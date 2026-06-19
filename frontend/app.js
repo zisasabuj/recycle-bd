@@ -2399,3 +2399,137 @@ document.addEventListener('change', (e) => {
     setCategoryFromSidebar(document.querySelector('.sb-cat-item.active') || document.querySelector('.sb-cat-item'), e.target.value);
   }
 });
+// ===== MOBILE FILTER SHEET (Daraz-style bottom sheet) =====
+
+function isMobileViewport() { return window.innerWidth <= 768; }
+
+// Build mobile category chips under hero (mirrors sidebar categories)
+function buildMobileCatChips() {
+  const host = document.getElementById('mobileCatChips');
+  if (!host || host.dataset.built === '1') return;
+  host.dataset.built = '1';
+  const items = document.querySelectorAll('#sbCategoryList .sb-cat-item');
+  const cats = Array.from(items).map(li => ({
+    cat: li.dataset.cat || '',
+    label: (li.textContent || '').replace(/\d+/g, '').trim(),
+    icon: li.querySelector('.sb-cat-ico')?.textContent || ''
+  }));
+  host.innerHTML = cats.map(c =>
+    `<button type="button" class="mobile-cat-chip${c.cat === currentCategory ? ' active' : ''}" data-cat="${c.cat}">` +
+    `<span style="margin-right:6px">${c.icon}</span>${c.label}</button>`
+  ).join('');
+  host.querySelectorAll('.mobile-cat-chip').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const cat = btn.dataset.cat;
+      document.querySelectorAll('.mobile-cat-chip').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      document.querySelectorAll('.sb-cat-item').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll(`.sb-cat-item[data-cat="${cat}"]`).forEach(p => p.classList.add('active'));
+      currentCategory = cat;
+      loadAuctions();
+      updateMobileFilterCount();
+    });
+  });
+}
+
+// Count active filters → update button badge
+function updateMobileFilterCount() {
+  const badge = document.getElementById('mobileFilterCount');
+  if (!badge) return;
+  let n = 0;
+  if (currentCategory) n++;
+  const min = parseInt(document.getElementById('priceMin')?.value, 10);
+  const max = parseInt(document.getElementById('priceMax')?.value, 10);
+  if (min || (max && max < 200000)) n++;
+  const conds = document.querySelectorAll('input[name=condition]:checked').length;
+  if (conds) n++;
+  badge.textContent = n ? String(n) : '';
+}
+
+// Open bottom sheet
+function openMobileFilter() {
+  if (!isMobileViewport()) return;
+  const sidebar = document.getElementById('catsidebar');
+  const backdrop = document.getElementById('mobileSheetBackdrop');
+  if (!sidebar) return;
+  sidebar.classList.add('mobile-sheet-open');
+  void sidebar.offsetWidth; // reflow
+  requestAnimationFrame(() => {
+    sidebar.classList.add('sheet-visible');
+    backdrop?.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  });
+}
+
+// Close bottom sheet
+function closeMobileFilter() {
+  const sidebar = document.getElementById('catsidebar');
+  const backdrop = document.getElementById('mobileSheetBackdrop');
+  if (!sidebar) return;
+  sidebar.classList.remove('sheet-visible');
+  backdrop?.classList.remove('open');
+  document.body.style.overflow = '';
+  setTimeout(() => {
+    if (!sidebar.classList.contains('sheet-visible')) {
+      sidebar.classList.remove('mobile-sheet-open');
+    }
+  }, 300);
+}
+
+// Apply + close
+function applyMobileFilter() {
+  applyPriceFilter();
+  applyConditionFilter();
+  updateMobileFilterCount();
+  closeMobileFilter();
+}
+
+// Clear all filters
+function clearMobileFilters() {
+  const min = document.getElementById('priceMin'); if (min) min.value = '';
+  const max = document.getElementById('priceMax'); if (max) max.value = '';
+  const range = document.getElementById('priceRange'); if (range) range.value = range.max;
+  document.querySelectorAll('input[name=condition]').forEach(c => c.checked = false);
+  document.querySelectorAll('.sb-cat-item').forEach(p => p.classList.remove('active'));
+  document.querySelector('.sb-cat-item[data-cat=""]')?.classList.add('active');
+  document.querySelectorAll('.mobile-cat-chip').forEach(b => b.classList.remove('active'));
+  document.querySelector('.mobile-cat-chip[data-cat=""]')?.classList.add('active');
+  currentCategory = '';
+  applyPriceFilter();
+  loadAuctions();
+  updateMobileFilterCount();
+}
+
+// Wire it up on DOMContentLoaded
+document.addEventListener('DOMContentLoaded', () => {
+  buildMobileCatChips();
+  updateMobileFilterCount();
+
+  document.getElementById('openMobileFilter')?.addEventListener('click', openMobileFilter);
+  document.getElementById('closeMobileFilter')?.addEventListener('click', closeMobileFilter);
+  document.getElementById('mobileSheetBackdrop')?.addEventListener('click', closeMobileFilter);
+  document.getElementById('applyMobileFilter')?.addEventListener('click', applyMobileFilter);
+  document.getElementById('clearMobileFilters')?.addEventListener('click', clearMobileFilters);
+  document.getElementById('mobileFilterReset')?.addEventListener('click', clearMobileFilters);
+
+  ['priceMin', 'priceMax'].forEach(id => {
+    document.getElementById(id)?.addEventListener('input', updateMobileFilterCount);
+  });
+  document.querySelectorAll('input[name=condition]').forEach(c => {
+    c.addEventListener('change', updateMobileFilterCount);
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeMobileFilter();
+  });
+});
+
+// Re-sync chip state + count after category changes
+const _origSetCat = setCategoryFromSidebar;
+setCategoryFromSidebar = function(el, cat) {
+  _origSetCat(el, cat);
+  document.querySelectorAll('.mobile-cat-chip').forEach(b => {
+    b.classList.toggle('active', b.dataset.cat === (cat || ''));
+  });
+  updateMobileFilterCount();
+};

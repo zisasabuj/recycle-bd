@@ -121,8 +121,30 @@
         <!-- BODY: SIDEBAR + HERO -->
         <div class="body-grid">
 
+          <!-- Mobile-only horizontal category chips (under hero) -->
+          <div class="mobile-cat-chips" id="mobileCatChips"></div>
+
+          <!-- Mobile-only filter trigger bar -->
+          <div class="mobile-filter-bar">
+            <button type="button" class="mobile-filter-btn" id="openMobileFilter">
+              <span>🎚️</span>
+              <span>Filters</span>
+              <span class="mobile-filter-count" id="mobileFilterCount"></span>
+            </button>
+            <button type="button" class="mobile-filter-reset" id="mobileFilterReset">Reset</button>
+          </div>
+
+          <!-- Backdrop for mobile sheet -->
+          <div class="mobile-sheet-backdrop" id="mobileSheetBackdrop"></div>
+
           <!-- ============ LEFT SIDEBAR ============ -->
           <aside class="sidebar" id="catsidebar">
+            <!-- Mobile sheet chrome (only visible when sheet is open) -->
+            <div class="mobile-sheet-handle"></div>
+            <div class="mobile-sheet-header">
+              <span class="mobile-sheet-title">Filters</span>
+              <button type="button" class="mobile-sheet-close" id="closeMobileFilter" aria-label="Close filters">✕</button>
+            </div>
 
             <!-- Sidebar: Category -->
             <div class="sb-card">
@@ -190,6 +212,12 @@
               <div class="sb-new-list" id="sbNewList">
                 <div class="sb-new-empty">Loading…</div>
               </div>
+            </div>
+
+            <!-- Mobile sheet footer (Apply / Clear) -->
+            <div class="mobile-sheet-footer">
+              <button type="button" class="mobile-sheet-clear" id="clearMobileFilters">Clear all</button>
+              <button type="button" class="mobile-sheet-apply" id="applyMobileFilter">Show results</button>
             </div>
 
           </aside>
