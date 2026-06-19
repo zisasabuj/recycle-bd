@@ -1,48 +1,51 @@
-// /api/auth/me — GET (current user) and PUT (update profile)
-// Dedicated Vercel function. Schema: username/fullName/passwordHash/rating.
-import { prisma } from '../../_lib/prisma.js';
-import { withAuth, json, error } from '../../_lib/middleware.js';
+// GET/PUT /api/auth/me
+// Inline pattern (matches import-data.js). Returns current user.
+import { PrismaClient } from '@prisma/client';
+import jwt from 'jsonwebtoken';
 
-export default withAuth(async (req, res) => {
+const prisma = new PrismaClient();
+const JWT_SECRET = process.env.JWT_SECRET || 'change-me-in-production';
+
+function getUserFromHeader(authHeader) {
+  if (!authHeader || !authHeader.startsWith('Bearer ')) return null;
+  try { return jwt.verify(authHeader.slice(7), JWT_SECRET); }
+  catch { return null; }
+}
+
+export default async function handler(req, res) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, PUT, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  if (req.method === 'OPTIONS') return res.status(200).end();
+
+  const payload = getUserFromHeader(req.headers.authorization);
+  if (!payload) return res.status(401).json({ error: 'Missing or invalid Authorization header' });
+
   try {
     if (req.method === 'GET') {
       const user = await prisma.user.findUnique({
-        where: { id: req.userId },
-        select: {
-          id: true, username: true, email: true, fullName: true, phone: true,
-          role: true, rating: true, createdAt: true,
-        },
+        where: { id: payload.userId },
+        select: { id: true, username: true, email: true, fullName: true, role: true, rating: true, phone: true, createdAt: true },
       });
-      if (!user) return error(res, 404, 'User not found');
-      return json(res, 200, { user });
+      if (!user) return res.status(401).json({ error: 'User not found' });
+      return res.status(200).json({ user });
     }
     if (req.method === 'PUT') {
-      const { fullName, phone, email } = req.body || {};
-      const data = {};
-      if (fullName !== undefined) data.fullName = fullName || null;
-      if (phone !== undefined) data.phone = phone || null;
-      if (email !== undefined) {
-        if (!email.includes('@')) return error(res, 400, 'Invalid email');
-        const conflict = await prisma.user.findFirst({
-          where: { email, NOT: { id: req.userId } },
-          select: { id: true },
-        });
-        if (conflict) return error(res, 409, 'Email already in use');
-        data.email = email;
+      let body = req.body;
+      if (typeof body === 'string') {
+        try { body = JSON.parse(body); } catch { return res.status(400).json({ error: 'Invalid JSON body' }); }
       }
-      const updated = await prisma.user.update({
-        where: { id: req.userId },
-        data,
-        select: {
-          id: true, username: true, email: true, fullName: true, phone: true,
-          role: true, rating: true, createdAt: true,
-        },
+      const { fullName, phone, email } = body || {};
+      const user = await prisma.user.update({
+        where: { id: payload.userId },
+        data: { ...(fullName && { fullName }), ...(phone && { phone }), ...(email && { email }) },
+        select: { id: true, username: true, email: true, fullName: true, role: true, rating: true, phone: true },
       });
-      return json(res, 200, { user: updated });
+      return res.status(200).json({ user });
     }
-    return error(res, 405, 'GET or PUT only');
+    return res.status(405).json({ error: 'Method not allowed' });
   } catch (err) {
     console.error('[me]', err);
-    return error(res, 500, 'Failed');
+    return res.status(500).json({ error: 'Auth check failed' });
   }
-});
+}
