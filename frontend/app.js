@@ -1439,7 +1439,8 @@ function escapeAttr(s) {
 }
 
 function swapImage(url, el) {
-  const main = document.querySelector('.detail-img-wrap img.detail-img');
+  // Detail page uses .koko-main-img + .koko-thumb classes (not #thumbRow)
+  const main = document.querySelector('.koko-main-img') || document.querySelector('.detail-img-wrap img.detail-img');
   if (main) {
     main.style.opacity = '0';
     setTimeout(() => {
@@ -1447,8 +1448,8 @@ function swapImage(url, el) {
       main.style.opacity = '1';
     }, 150);
   }
-  document.querySelectorAll('#thumbRow .thumb').forEach(t => t.classList.remove('active'));
-  el.classList.add('active');
+  document.querySelectorAll('.koko-thumb').forEach(t => t.classList.remove('active'));
+  if (el) el.classList.add('active');
 }
 
 function escapeHtml(s) {
