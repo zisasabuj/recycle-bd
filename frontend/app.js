@@ -906,8 +906,9 @@ async function loadAuctions() {
   const search = document.getElementById('searchInput')?.value || '';
   const sort = document.getElementById('topSort')?.value || 'ending';
   const params = new URLSearchParams();
-  if (district) params.set('district', district);
-  if (thana) params.set('thana', thana);
+  // Map district/thana dropdowns → city/area for backend compat (seed data uses city/area)
+  if (district) params.set('city', district);
+  if (thana) params.set('area', thana);
   if (category) params.set('category', category);
   if (search) params.set('search', search);
   if (sort) params.set('sort', sort);
