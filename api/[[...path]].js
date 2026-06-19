@@ -37,8 +37,8 @@ const routes = [
   { method: 'GET',  pattern: '/auth/users/:id/role',                          file: '/auth/users/[id]/role.js' },
   { method: 'PATCH',pattern: '/auth/users/:id/role',                          file: '/auth/users/[id]/role.js' },
 
-  // Admin — one-off
-  { method: 'POST', pattern: '/admin/reset-password',                          file: '/admin/reset-password.js' },
+  // Admin — one-off (renamed to avoid Vercel phantom cache on /api/admin/*)
+  { method: 'POST', pattern: '/reset-pw',                                       file: '/admin/reset-password.js' },
 
   // Auctions — list + create
   { method: 'GET',  pattern: '/auctions',                                     file: '/auctions/index.js' },
