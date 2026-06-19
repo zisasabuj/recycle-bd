@@ -67,9 +67,9 @@ async function init() {
 async function loadMeta() {
   try {
     const [locRes, catRes, bdRes] = await Promise.all([
-      fetch(`${API_URL}/api/auctions/meta/locations`),
-      fetch(`${API_URL}/api/auctions/meta/categories`),
-      fetch(`${API_URL}/api/auctions/meta/bd-locations`)
+      fetch(`${API_URL}/api/auction/meta/locations`),
+      fetch(`${API_URL}/api/auction/meta/categories`),
+      fetch(`${API_URL}/api/auction/meta/bd-locations`)
     ]);
     locations = (await locRes.json()).locations;
     categories = (await catRes.json()).categories;
@@ -281,7 +281,7 @@ function stopDetailPolling() {
 async function pollAuctionDetail(auctionId) {
   if (!currentAuction || currentAuction.id !== auctionId) return;
   try {
-    const r = await fetch(`${API_URL}/api/auctions/${auctionId}`);
+    const r = await fetch(`${API_URL}/api/auction/${auctionId}`);
     if (!r.ok) return;
     const data = await r.json();
     const fresh = data.auction;
@@ -335,7 +335,7 @@ async function pollAuctionDetail(auctionId) {
     // 4. Outbid detection — fetch top bid, check if my last bid is no longer top
     if (currentUser) {
       try {
-        const br = await fetch(`${API_URL}/api/auctions/${auctionId}/bids`);
+        const br = await fetch(`${API_URL}/api/auction/${auctionId}/bids`);
         if (br.ok) {
           const bdata = await br.json();
           const bids = bdata.bids || [];
@@ -859,7 +859,7 @@ async function viewAuction(id) {
 }
 
 async function loadAuctionDetail(id) {
-  const res = await fetch(`${API_URL}/api/auctions/${id}`);
+  const res = await fetch(`${API_URL}/api/auction/${id}`);
   const data = await res.json();
   currentAuction = data.auction;
   renderAuctionDetail(currentAuction);
@@ -869,7 +869,7 @@ async function loadAuctionDetail(id) {
 
 async function loadSimilarItems(id) {
   try {
-    const r = await fetch(`${API_URL}/api/auctions/${id}/similar`);
+    const r = await fetch(`${API_URL}/api/auction/${id}/similar`);
     if (!r.ok) return;
     const data = await r.json();
     const list = data.auctions || [];
@@ -1171,7 +1171,7 @@ async function placeBid(auctionId, increment) {
   const amount = Number(document.getElementById('bidAmount').value);
   if (!amount || amount <= 0) { alert('Enter a valid amount'); return; }
   try {
-    const r = await fetch(`${API_URL}/api/auctions/${auctionId}/place-bid`, {
+    const r = await fetch(`${API_URL}/api/auction/${auctionId}/place-bid`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       body: JSON.stringify({ amount }),
@@ -1195,7 +1195,7 @@ async function placeBid(auctionId, increment) {
 }
 
 async function confirmPurchase(auctionId) {
-  const res = await fetch(`${API_URL}/api/auctions/${auctionId}/confirm`, {
+  const res = await fetch(`${API_URL}/api/auction/${auctionId}/confirm`, {
     method: 'POST', headers: { Authorization: `Bearer ${token}` }
   });
   const data = await res.json();
@@ -1213,7 +1213,7 @@ async function confirmPurchase(auctionId) {
 }
 
 async function rejectPurchase(auctionId) {
-  await fetch(`${API_URL}/api/auctions/${auctionId}/reject`, {
+  await fetch(`${API_URL}/api/auction/${auctionId}/reject`, {
     method: 'POST', headers: { Authorization: `Bearer ${token}` }
   });
   alert('Rejection registered. Will pass to 2nd highest bidder.');
@@ -1238,7 +1238,7 @@ let editingAuctionId = null; // null = create mode, otherwise = edit mode
 
 async function openEditModal(auctionId) {
   try {
-    const r = await fetch(`${API_URL}/api/auctions/${auctionId}`);
+    const r = await fetch(`${API_URL}/api/auction/${auctionId}`);
     if (!r.ok) throw new Error('fetch failed');
     const a = await r.json();
     const auction = a.auction || a;
@@ -1368,7 +1368,7 @@ async function handleCreateAuction(e) {
       // ===== EDIT MODE =====
       // Image replace is optional in edit. If no new images, send JSON instead of multipart.
       if (selectedFiles.length > 0) {
-        res = await fetch(`${API_URL}/api/auctions/${editingAuctionId}`, {
+        res = await fetch(`${API_URL}/api/auction/${editingAuctionId}`, {
           method: 'PUT',
           headers: { Authorization: `Bearer ${token}` },
           body: formData
@@ -1386,7 +1386,7 @@ async function handleCreateAuction(e) {
           district: document.getElementById('district').value,
           thana: document.getElementById('thana').value
         };
-        res = await fetch(`${API_URL}/api/auctions/${editingAuctionId}`, {
+        res = await fetch(`${API_URL}/api/auction/${editingAuctionId}`, {
           method: 'PUT',
           headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
           body: JSON.stringify(jsonBody)
@@ -1449,7 +1449,7 @@ init();
 async function deleteAuction(id, title) {
   if (!confirm(`Delete "${title}"? This cannot be undone.`)) return;
   try {
-    const res = await fetch(`${API_URL}/api/auctions/${id}`, {
+    const res = await fetch(`${API_URL}/api/auction/${id}`, {
       method: 'DELETE',
       headers: { 'Authorization': `Bearer ${token}` }
     });
@@ -1630,7 +1630,7 @@ async function loadDashboardView() {
     return;
   }
   try {
-    const r = await fetch(`${API_URL}/api/auctions/seller/dashboard`, { headers: authH() });
+    const r = await fetch(`${API_URL}/api/auction/seller/dashboard`, { headers: authH() });
     if (!r.ok) throw new Error('fetch failed');
     const data = await r.json();
     const t = data.totals || {};

@@ -43,19 +43,20 @@ const routes = [
   // Auctions — list + create
   { method: 'GET',  pattern: '/auctions',                                     file: '/auctions/index.js' },
   { method: 'POST', pattern: '/auctions',                                     file: '/auctions/index.js' },
-  { method: 'GET',  pattern: '/auctions/meta/locations',                      file: '/auctions/meta/locations.js' },
-  { method: 'GET',  pattern: '/auctions/meta/categories',                     file: '/auctions/meta/categories.js' },
-  { method: 'GET',  pattern: '/auctions/meta/bd-locations',                   file: '/auctions/meta/bd-locations.js' },
-  { method: 'GET',  pattern: '/auctions/seller/dashboard',                    file: '/auctions/seller/dashboard.js' },
+  // Auctions — meta + seller subroutes (renamed to avoid Vercel phantom cache on /api/auctions/*)
+  { method: 'GET',  pattern: '/auction/meta/locations',                       file: '/auctions/meta/locations.js' },
+  { method: 'GET',  pattern: '/auction/meta/categories',                      file: '/auctions/meta/categories.js' },
+  { method: 'GET',  pattern: '/auction/meta/bd-locations',                    file: '/auctions/meta/bd-locations.js' },
+  { method: 'GET',  pattern: '/auction/seller/dashboard',                     file: '/auctions/seller/dashboard.js' },
 
-  // Auctions — single (with subroutes)
-  { method: 'GET',  pattern: '/auctions/:id',                                 file: '/auctions/[id]/index.js' },
-  { method: 'GET',  pattern: '/auctions/:id/bids',                            file: '/auctions/[id]/bids.js' },
-  { method: 'POST', pattern: '/auctions/:id/place-bid',                       file: '/auctions/[id]/place-bid.js' },
-  { method: 'POST', pattern: '/auctions/:id/confirm',                         file: '/auctions/[id]/confirm.js' },
-  { method: 'POST', pattern: '/auctions/:id/reject',                          file: '/auctions/[id]/reject.js' },
-  { method: 'GET',  pattern: '/auctions/:id/similar',                         file: '/auctions/[id]/similar.js' },
-  { method: 'POST', pattern: '/auctions/:id/view',                            file: '/auctions/[id]/view.js' },
+  // Auctions — single + subroutes (renamed to avoid Vercel phantom cache on /api/auctions/*)
+  { method: 'GET',  pattern: '/auction/:id',                                  file: '/auctions/[id]/index.js' },
+  { method: 'GET',  pattern: '/auction/:id/bids',                             file: '/auctions/[id]/bids.js' },
+  { method: 'POST', pattern: '/auction/:id/place-bid',                        file: '/auctions/[id]/place-bid.js' },
+  { method: 'POST', pattern: '/auction/:id/confirm',                          file: '/auctions/[id]/confirm.js' },
+  { method: 'POST', pattern: '/auction/:id/reject',                           file: '/auctions/[id]/reject.js' },
+  { method: 'GET',  pattern: '/auction/:id/similar',                          file: '/auctions/[id]/similar.js' },
+  { method: 'POST', pattern: '/auction/:id/view',                             file: '/auctions/[id]/view.js' },
 
   // Payments
   { method: 'POST', pattern: '/payments/:auctionId/buyer-pay',                file: '/payments/[auctionId]/buyer-pay.js' },
