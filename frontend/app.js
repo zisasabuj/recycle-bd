@@ -176,6 +176,15 @@ function toggleMobileMenu() {
   btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
 }
 
+// ---- Sidebar card collapse (mobile) ----
+function toggleSbCard(headerEl) {
+  const card = headerEl.closest('.sb-card');
+  if (!card) return;
+  const isCollapsed = card.getAttribute('data-collapsed') !== 'false';
+  card.setAttribute('data-collapsed', isCollapsed ? 'false' : 'true');
+  headerEl.setAttribute('aria-expanded', isCollapsed ? 'true' : 'false');
+}
+
 function closeMobileMenu() {
   const nav = document.getElementById('mainNav');
   const btn = document.getElementById('hamburgerBtn');

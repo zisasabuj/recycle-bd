@@ -125,8 +125,12 @@
           <aside class="sidebar" id="catsidebar">
 
             <!-- Sidebar: Category -->
-            <div class="sb-card">
-              <h3 class="sb-title">Category</h3>
+            <div class="sb-card" data-collapsible="true" data-collapsed="true">
+              <div class="sb-card-header" onclick="toggleSbCard(this)" role="button" tabindex="0" aria-expanded="false">
+                <h3 class="sb-title">Category</h3>
+                <span class="sb-chevron">▾</span>
+              </div>
+              <div class="sb-card-body">
               <ul class="sb-cat-list" id="sbCategoryList">
                 <li class="sb-cat-item active" data-cat="" onclick="setCategoryFromSidebar(this,'')">
                   <span class="sb-cat-ico">📦</span> All Categories <span class="sb-cat-count" id="catCountAll">0</span>
@@ -153,11 +157,16 @@
                   <span class="sb-cat-ico">🎁</span> Other <span class="sb-cat-count" id="catCountOther">0</span>
                 </li>
               </ul>
+              </div>
             </div>
 
             <!-- Sidebar: Filter by Price + Condition -->
-            <div class="sb-card">
-              <h3 class="sb-title">Fill by price</h3>
+            <div class="sb-card" data-collapsible="true" data-collapsed="true">
+              <div class="sb-card-header" onclick="toggleSbCard(this)" role="button" tabindex="0" aria-expanded="false">
+                <h3 class="sb-title">Filter by price</h3>
+                <span class="sb-chevron">▾</span>
+              </div>
+              <div class="sb-card-body">
               <div class="price-range">
                 <div class="price-row">
                   <div class="price-input">
@@ -182,13 +191,19 @@
               </ul>
 
               <button class="sb-filter-btn" onclick="applyPriceFilter()">🔍 Filter</button>
+              </div>
             </div>
 
             <!-- Sidebar: New products (latest 3 auctions) -->
-            <div class="sb-card">
-              <h3 class="sb-title">Latest Items</h3>
+            <div class="sb-card" data-collapsible="true" data-collapsed="true">
+              <div class="sb-card-header" onclick="toggleSbCard(this)" role="button" tabindex="0" aria-expanded="false">
+                <h3 class="sb-title">Latest Items</h3>
+                <span class="sb-chevron">▾</span>
+              </div>
+              <div class="sb-card-body">
               <div class="sb-new-list" id="sbNewList">
                 <div class="sb-new-empty">Loading…</div>
+              </div>
               </div>
             </div>
 

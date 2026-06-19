@@ -3378,7 +3378,16 @@ body {
 
   .util-left, .util-right { justify-self: center; }
   .nav-links { display: none; }
-  .nav-links.mobile-open { display: flex; flex-direction: column; position: absolute; top: 100%; left: 0; right: 0; background: white; padding: 12px; z-index: 99; box-shadow: 0 8px 24px rgba(0,0,0,0.1); }
+  /* Hamburger drawer — toggled via JS adding .open to #mainNav */
+  .main-nav.open > .main-nav-inner > .nav-links {
+    display: flex; flex-direction: column; position: absolute;
+    top: 100%; left: 0; right: 0; background: white;
+    padding: 12px; z-index: 99; box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+  }
+  .main-nav.open > .main-nav-inner > .nav-links .nav-link {
+    padding: 10px 8px; border-bottom: 1px solid #f0f0f0; display: flex; align-items: center; gap: 8px;
+  }
+  .main-nav.open > .main-nav-inner > .nav-links .nav-link:last-child { border-bottom: 0; }
   .mobile-only { display: flex; }
   .main-header-inner { grid-template-columns: 1fr auto; }
   .header-search { display: none; }
@@ -3400,7 +3409,7 @@ body {
   .main-nav-inner > .browse-btn { width: 100%; justify-content: center; }
   .main-nav-inner > .nav-support { display: none; }
   /* On mobile, hide the inline nav-links — they live inside the hamburger drawer */
-  .main-nav-inner > .nav-links:not(.mobile-open) { display: none; }
+  .main-nav:not(.open) > .main-nav-inner > .nav-links { display: none; }
 
   /* Sidebar / filter layout — collapse to single column */
   .body-grid { grid-template-columns: 1fr !important; gap: 12px; }
@@ -3413,9 +3422,44 @@ body {
   .brand-text { font-size: 18px; }
   .brand-tagline { display: none; }
 
+  /* Collapsible sidebar cards on mobile — keep titles visible, collapse bodies by default */
+  .sidebar > .sb-card {
+    padding: 12px !important;
+  }
+  .sb-card[data-collapsible="true"] > .sb-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    user-select: none;
+    margin: -4px 0 8px;
+    padding: 4px 0;
+  }
+  .sb-card[data-collapsible="true"] > .sb-card-header h3.sb-title {
+    margin: 0;
+    font-size: 15px;
+  }
+  .sb-card[data-collapsible="true"] > .sb-card-header .sb-chevron {
+    transition: transform 0.2s ease;
+    font-size: 14px;
+    color: #6b4eff;
+  }
+  .sb-card[data-collapsible="true"][data-collapsed="true"] > .sb-card-body {
+    display: none;
+  }
+  /* When collapsed: chevron points DOWN (default) */
+  /* When expanded: chevron rotates 180° to point UP */
+  .sb-card[data-collapsible="true"][data-collapsed="false"] > .sb-card-header .sb-chevron {
+    transform: rotate(180deg);
+  }
+
   /* Hero stats grid */
   .hero-stats { grid-template-columns: repeat(2, 1fr) !important; gap: 12px; }
 }
+
+/* ===== Desktop (always visible, no toggle) ===== */
+.sb-card[data-collapsible="true"] > .sb-card-header { display: none; }
+.sb-card[data-collapsible="true"] > .sb-card-body { display: block !important; }
 
 /* ============ Account Dropdown (header) ============ */
 .account-action { position: relative; }
