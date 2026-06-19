@@ -358,7 +358,7 @@ async function pollAuctionDetail(auctionId) {
     // 5. Contact unlocked detection
     if (currentUser) {
       try {
-        const pr = await fetch(`${API_URL}/api/payments/${auctionId}/status`, { headers: authH() });
+        const pr = await fetch(`${API_URL}/api/x/pay-status?id=${auctionId}`, { headers: authH() });
         if (pr.ok) {
           const pdata = await pr.json();
           if (pdata.unlocked && !currentUser._contactUnlockedNotified) {
@@ -401,7 +401,7 @@ function startChatPolling(chatId) {
   chatPollHandle = setInterval(async () => {
     if (!token || currentChatId !== chatId) return;
     try {
-      const r = await fetch(`${API_URL}/api/chats/${chatId}/messages`, { headers: authH() });
+      const r = await fetch(`${API_URL}/api/x/chat-messages?id=${chatId}`, { headers: authH() });
       if (!r.ok) return;
       const data = await r.json();
       const msgs = data.messages || [];
@@ -485,7 +485,7 @@ let currentEditMode = 'OPEN';
 
 async function fetchEditMode() {
   try {
-    const r = await fetch(`${API_URL}/api/settings/edit-mode`);
+    const r = await fetch(`${API_URL}/api/x/settings-edit-mode`);
     if (!r.ok) return;
     const data = await r.json();
     currentEditMode = (data.mode === 'CLOSE' || data.mode === 'OPEN') ? data.mode : 'OPEN';
@@ -524,7 +524,7 @@ async function selectEditMode(mode) {
   const errEl = document.getElementById('settingsError');
   if (errEl) { errEl.style.display = 'none'; errEl.textContent = ''; }
   try {
-    const r = await fetch(`${API_URL}/api/admin/settings/edit-mode`, {
+    const r = await fetch(`${API_URL}/api/x/admin-edit-mode`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
       body: JSON.stringify({ mode })
@@ -1201,7 +1201,7 @@ async function confirmPurchase(auctionId) {
   const data = await res.json();
   if (data.transaction) {
     if (confirm(`Pay ৳${data.transaction.commissionAmt} commission?`)) {
-      const payRes = await fetch(`${API_URL}/api/payments/${auctionId}/buyer-pay`, {
+      const payRes = await fetch(`${API_URL}/api/x/pay-buyer?id=${auctionId}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ phone: '01700000000' })
@@ -1220,7 +1220,7 @@ async function rejectPurchase(auctionId) {
 }
 
 async function getContact(auctionId) {
-  const res = await fetch(`${API_URL}/api/payments/${auctionId}/contact`, {
+  const res = await fetch(`${API_URL}/api/x/pay-contact?id=${auctionId}`, {
     headers: { Authorization: `Bearer ${token}` }
   });
   const data = await res.json();
@@ -1394,7 +1394,7 @@ async function handleCreateAuction(e) {
       }
     } else {
       // ===== CREATE MODE =====
-      res = await fetch(`${API_URL}/api/upload/auction`, {
+      res = await fetch(`${API_URL}/api/x/upload-auction`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` }, // NO Content-Type - browser sets multipart boundary
         body: formData
@@ -1514,7 +1514,7 @@ async function toggleWatchlist(auctionId, btnEl) {
     });
   try {
     if (isWatched) {
-      const r = await fetch(`${API_URL}/api/watchlist/${auctionId}`, { method: 'DELETE', headers: authH() });
+      const r = await fetch(`${API_URL}/api/x/watchlist-toggle?id=${auctionId}`, { method: 'DELETE', headers: authH() });
       if (!r.ok) throw new Error('remove failed');
       showToast('Removed from watchlist', 'ok');
     } else {
@@ -1719,7 +1719,7 @@ async function loadChatMessages(chatId) {
   if (!msgEl) return;
   msgEl.innerHTML = '<div class="chat-empty">Loading…</div>';
   try {
-    const r = await fetch(`${API_URL}/api/chats/${chatId}/messages`, { headers: authH() });
+    const r = await fetch(`${API_URL}/api/x/chat-messages?id=${chatId}`, { headers: authH() });
     if (!r.ok) throw new Error('fetch failed');
     const data = await r.json();
     const msgs = data.messages || [];
@@ -1751,7 +1751,7 @@ async function sendMessage() {
   if (!text) return;
   input.value = '';
   try {
-    const r = await fetch(`${API_URL}/api/chats/${currentChatId}/messages`, {
+    const r = await fetch(`${API_URL}/api/x/chat-messages?id=${currentChatId}`, {
       method: 'POST',
       headers: { ...authH(), 'Content-Type': 'application/json' },
       body: JSON.stringify({ content: text })

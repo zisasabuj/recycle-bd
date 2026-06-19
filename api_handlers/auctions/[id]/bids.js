@@ -9,14 +9,9 @@ export default withCors(async (req, res) => {
   try {
     const bids = await prisma.bid.findMany({
       where: { auctionId: id },
-      select: { id: true, amount: true, placedAt: true },
+      select: { id: true, amount: true, createdAt: true, isWinning: true },
       orderBy: { amount: 'desc' },
       take: 10,
-    }).catch((e) => {
-      // Fallback: production schema may be missing isWinning/isSecond fields.
-      // Retry with a minimal select.
-      console.error('[get bids primary query failed]', e.message);
-      throw e;
     });
     return json(res, 200, { bids });
   } catch (err) {

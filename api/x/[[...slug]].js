@@ -29,6 +29,7 @@ import '../../_lib/payment-helpers.js';
 const HANDLERS_DIR = '../../api_handlers';
 
 const routes = [
+  // Auction verb routes
   { method: 'GET',  verb: 'bids',            file: '/auctions/[id]/bids.js' },
   { method: 'GET',  verb: 'similar',         file: '/auctions/[id]/similar.js' },
   { method: 'POST', verb: 'place-bid',       file: '/auctions/[id]/place-bid.js' },
@@ -39,6 +40,43 @@ const routes = [
   { method: 'GET',  verb: 'locations',       file: '/auctions/meta/locations.js' },
   { method: 'GET',  verb: 'bd-locations',    file: '/auctions/meta/bd-locations.js' },
   { method: 'GET',  verb: 'seller-dashboard', file: '/auctions/seller/dashboard.js' },
+
+  // Upload routes (flattened: was /api/upload/auction, /api/upload/image)
+  { method: 'POST', verb: 'upload-auction',  file: '/upload/auction.js' },
+  { method: 'POST', verb: 'upload-image',    file: '/upload/image.js' },
+
+  // Watchlist routes (flattened: was /api/watchlist/ids, /api/watchlist/{id})
+  { method: 'GET',    verb: 'watchlist',         file: '/watchlist/index.js' },
+  { method: 'POST',   verb: 'watchlist',         file: '/watchlist/index.js' },
+  { method: 'GET',    verb: 'watchlist-ids',     file: '/watchlist/ids.js' },
+  { method: 'POST',   verb: 'watchlist-toggle',  file: '/watchlist/[auctionId].js' },
+  { method: 'DELETE', verb: 'watchlist-toggle',  file: '/watchlist/[auctionId].js' },
+
+  // Notifications
+  { method: 'POST', verb: 'notifications-read-all', file: '/notifications/read-all.js' },
+
+  // Payments (flattened: was /api/payments/{id}/buyer-pay, etc.)
+  { method: 'POST', verb: 'pay-buyer',    file: '/payments/[auctionId]/buyer-pay.js' },
+  { method: 'POST', verb: 'pay-seller',   file: '/payments/[auctionId]/seller-pay.js' },
+  { method: 'GET',  verb: 'pay-contact',  file: '/payments/[auctionId]/contact.js' },
+  { method: 'GET',  verb: 'pay-status',   file: '/payments/[auctionId]/status.js' },
+
+  // Chats (flattened: was /api/chats/{id}/messages, send, read)
+  { method: 'GET',  verb: 'chat-messages', file: '/chats/[id]/messages.js' },
+  { method: 'POST', verb: 'chat-messages', file: '/chats/[id]/messages.js' },
+  { method: 'POST', verb: 'chat-read',     file: '/chats/[id]/messages.js' },
+
+  // Admin user role (flattened: was /api/auth/users/{id}/role)
+  { method: 'GET',   verb: 'user-role',   file: '/auth/users/[id]/role.js' },
+  { method: 'PATCH', verb: 'user-role',   file: '/auth/users/[id]/role.js' },
+
+  // Settings / edit-mode (flattened: was /api/settings/edit-mode, /api/admin/settings/edit-mode)
+  { method: 'GET',   verb: 'settings-edit-mode', file: '/settings/edit-mode.js' },
+  { method: 'POST',  verb: 'settings-edit-mode', file: '/settings/edit-mode.js' },
+  { method: 'PATCH', verb: 'settings-edit-mode', file: '/settings/edit-mode.js' },
+  { method: 'GET',   verb: 'admin-edit-mode',    file: '/admin/settings/edit-mode.js' },
+  { method: 'POST',  verb: 'admin-edit-mode',    file: '/admin/settings/edit-mode.js' },
+  { method: 'PATCH', verb: 'admin-edit-mode',    file: '/admin/settings/edit-mode.js' },
 ];
 
 export default async function handler(req, res) {
