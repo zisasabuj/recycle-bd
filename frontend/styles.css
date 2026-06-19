@@ -3137,9 +3137,10 @@ body {
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   gap: var(--space-4);
 }
-.lot-grid.lot-grid-5 { grid-template-columns: repeat(5, 1fr); }
-.lot-grid.lot-grid-4 { grid-template-columns: repeat(4, 1fr); }
-.lot-grid.lot-grid-3 { grid-template-columns: repeat(3, 1fr); }
+.lot-grid.lot-grid-5 { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.lot-grid.lot-grid-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.lot-grid.lot-grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.lot-card { min-width: 0; }
 
 .lot-empty { grid-column: 1 / -1; padding: 40px; text-align: center; color: var(--text-muted); font-size: 14px; }
 
