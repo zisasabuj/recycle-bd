@@ -16,8 +16,10 @@ export default withCors(withAuth(async (req, res) => {
     const urls = [];
     for (const dataUri of list) {
       if (typeof dataUri !== 'string') continue;
-      const url = await uploadToImgBB(dataUri);
-      urls.push(url);
+      const result = await uploadToImgBB(dataUri);
+      // imgBB returns { url, deleteUrl } — return just URL string for Prisma String[] storage
+      const url = typeof result === 'string' ? result : result?.url;
+      if (url) urls.push(url);
     }
     if (urls.length === 0) return error(res, 400, 'No valid images uploaded');
     return json(res, 200, { urls });

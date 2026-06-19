@@ -53,6 +53,20 @@ async function handlePut(req, res, id, userId) {
     if (data.basePrice) data.basePrice = Number(data.basePrice);
     if (data.bidIncrement) data.bidIncrement = Number(data.bidIncrement);
 
+    // If client sent new image data URIs, upload to imgBB + extract URLs (Prisma expects String[])
+    if (Array.isArray(data.images) && data.images.length > 0 && typeof data.images[0] === 'string' && data.images[0].startsWith('data:')) {
+      const { uploadToImgBB } = await import('../../_lib/imgbb.js');
+      const uploaded = [];
+      for (const dataUri of data.images.slice(0, 5)) {
+        try {
+          const result = await uploadToImgBB(dataUri);
+          const url = typeof result === 'string' ? result : result?.url;
+          if (url) uploaded.push(url);
+        } catch (e) { console.error('[imgBB upload]', e); }
+      }
+      data.images = uploaded;
+    }
+
     const updated = await prisma.auction.update({
       where: { id },
       data,

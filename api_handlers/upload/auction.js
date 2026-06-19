@@ -37,11 +37,16 @@ export default withCors(withAuth(async (req, res) => {
       return error(res, 400, `Invalid thana: ${thana}`);
     }
 
-    // Upload images to imgBB (client sends base64 data URIs)
+    // Upload images to imgBB (client sends base64 data URIs) — extract URL string only
     const list = Array.isArray(images) ? images : (images ? [images] : []);
     const uploaded = [];
     for (const dataUri of list.slice(0, 5)) {
-      try { uploaded.push(await uploadToImgBB(dataUri)); }
+      try {
+        const result = await uploadToImgBB(dataUri);
+        // imgBB returns { url, deleteUrl } — Prisma images is String[], store URL only
+        const url = typeof result === 'string' ? result : result?.url;
+        if (url) uploaded.push(url);
+      }
       catch (e) { console.error('[imgBB upload]', e); }
     }
 
