@@ -51,9 +51,18 @@ export default async function handler(req, res) {
 
   // slug = the verb segment (e.g. 'bids', 'place-bid', 'categories')
   let slug = req.query.slug;
+  // DEBUG: log what Vercel actually sends
+  console.log('[/api/x DEBUG]', JSON.stringify({
+    method: req.method,
+    url: req.url,
+    query: req.query,
+    slug,
+    slugType: typeof slug,
+    isArray: Array.isArray(slug)
+  }));
   if (Array.isArray(slug)) slug = slug[0];
   if (typeof slug !== 'string' || !slug) {
-    return res.status(404).json({ error: `Route not found: ${req.method} /api/x/` });
+    return res.status(404).json({ error: `Route not found: ${req.method} /api/x/`, debug: { query: req.query, url: req.url } });
   }
 
   const route = routes.find((r) => r.method === req.method && r.verb === slug);
