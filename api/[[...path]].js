@@ -18,6 +18,7 @@ import '../_lib/payment-helpers.js';
 // don't get auto-resolved).
 import '../api_handlers/setup/migrate.js';
 import '../api_handlers/setup/import-dump.js';
+import '../api_handlers/admin/reset-password.js';
 
 const HANDLERS_DIR = '../api_handlers';
 
@@ -35,6 +36,9 @@ const routes = [
   { method: 'GET',  pattern: '/auth/users',                                   file: '/auth/users/index.js' },
   { method: 'GET',  pattern: '/auth/users/:id/role',                          file: '/auth/users/[id]/role.js' },
   { method: 'PATCH',pattern: '/auth/users/:id/role',                          file: '/auth/users/[id]/role.js' },
+
+  // Admin — one-off
+  { method: 'POST', pattern: '/admin/reset-password',                          file: '/admin/reset-password.js' },
 
   // Auctions — list + create
   { method: 'GET',  pattern: '/auctions',                                     file: '/auctions/index.js' },
