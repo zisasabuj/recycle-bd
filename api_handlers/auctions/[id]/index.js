@@ -32,8 +32,14 @@ async function handlePut(req, res, id, userId) {
     const isAdmin = requester && (requester.role === 'ADMIN' || requester.role === 'SUPER_ADMIN');
     if (!isOwner && !isAdmin) return error(res, 403, 'Only the seller or admin can edit');
 
-    const setting = await prisma.systemSetting.findUnique({ where: { key: 'edit_mode' } });
-    const editMode = setting && (setting.value === 'CLOSE' || setting.value === 'OPEN') ? setting.value : 'OPEN';
+    let editMode = 'OPEN';
+    try {
+      const setting = await prisma.systemSetting.findUnique({ where: { key: 'edit_mode' } });
+      editMode = setting && (setting.value === 'CLOSE' || setting.value === 'OPEN') ? setting.value : 'OPEN';
+    } catch (e) {
+      // SystemSetting table may not exist on a fresh DB — default to OPEN
+      editMode = 'OPEN';
+    }
 
     const allEditable = ['title', 'description', 'category', 'condition', 'basePrice', 'bidIncrement', 'city', 'area', 'district', 'thana', 'images'];
     const allowedInMode = editMode === 'CLOSE' ? ['description'] : allEditable;

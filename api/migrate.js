@@ -174,6 +174,15 @@ const STATEMENTS = [
      "token" TEXT UNIQUE,
      "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
    );`,
+
+  // SystemSetting
+  `CREATE TABLE IF NOT EXISTS "SystemSetting" (
+     "key" TEXT PRIMARY KEY,
+     "value" TEXT NOT NULL,
+     "updatedBy" TEXT,
+     "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+   );`,
+  `CREATE INDEX IF NOT EXISTS "SystemSetting_key_idx" ON "SystemSetting"("key");`,
 ];
 
 export default async function handler(req, res) {
