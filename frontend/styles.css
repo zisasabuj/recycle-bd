@@ -2897,9 +2897,10 @@ body {
    ============================================================ */
 .body-grid {
   display: grid;
-  grid-template-columns: 260px 1fr;
+  grid-template-columns: 260px minmax(0, 1fr);
   gap: var(--space-6);
   margin-bottom: var(--space-8);
+  min-width: 0;
 }
 
 /* ---- SIDEBAR ---- */
@@ -3023,7 +3024,7 @@ body {
 /* ============================================================
    5) HERO NEWSLETTER
    ============================================================ */
-.main-col { display: flex; flex-direction: column; gap: var(--space-6); }
+.main-col { display: flex; flex-direction: column; gap: var(--space-6); min-width: 0; }
 
 .hero {
   background: linear-gradient(135deg, #FFE5EC 0%, #FFE0CC 50%, #FFD4A8 100%);
@@ -3392,7 +3393,7 @@ body {
   .sidebar { position: static; max-height: none; }
   .footer-inner { grid-template-columns: repeat(3, 1fr); }
   .cats-grid { grid-template-columns: repeat(4, 1fr); }
-  .lot-grid.lot-grid-5 { grid-template-columns: repeat(3, 1fr); }
+  .lot-grid.lot-grid-5 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .four-col { grid-template-columns: repeat(2, 1fr); }
   .promo-banners { grid-template-columns: 1fr; }
   .main-header-inner { grid-template-columns: auto 1fr auto; }
@@ -3407,7 +3408,7 @@ body {
   .mobile-only { display: flex; }
   .main-header-inner { grid-template-columns: 1fr auto; }
   .header-search { display: none; }
-  .lot-grid.lot-grid-5, .lot-grid.lot-grid-4 { grid-template-columns: repeat(2, 1fr); }
+  .lot-grid.lot-grid-5, .lot-grid.lot-grid-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .four-col { grid-template-columns: 1fr; }
   .cats-grid { grid-template-columns: repeat(3, 1fr); }
   .footer-inner { grid-template-columns: 1fr 1fr; }
