@@ -36,13 +36,15 @@ const routes = [
   { method: 'GET',  pattern: '/seller/dashboard',       file: '/auctions/seller/dashboard.js' },
 
   // Single + subroutes
-  { method: 'GET',  pattern: '/:id',             file: '/auctions/[id]/index.js' },
-  { method: 'GET',  pattern: '/:id/bids',        file: '/auctions/[id]/bids.js' },
-  { method: 'POST', pattern: '/:id/place-bid',   file: '/auctions/[id]/place-bid.js' },
-  { method: 'POST', pattern: '/:id/confirm',     file: '/auctions/[id]/confirm.js' },
-  { method: 'POST', pattern: '/:id/reject',      file: '/auctions/[id]/reject.js' },
-  { method: 'GET',  pattern: '/:id/similar',     file: '/auctions/[id]/similar.js' },
-  { method: 'POST', pattern: '/:id/view',        file: '/auctions/[id]/view.js' },
+  { method: 'GET',    pattern: '/:id',             file: '/auctions/[id]/index.js' },
+  { method: 'PUT',    pattern: '/:id',             file: '/auctions/[id]/index.js' },
+  { method: 'DELETE', pattern: '/:id',             file: '/auctions/[id]/index.js' },
+  { method: 'GET',    pattern: '/:id/bids',        file: '/auctions/[id]/bids.js' },
+  { method: 'POST',   pattern: '/:id/place-bid',   file: '/auctions/[id]/place-bid.js' },
+  { method: 'POST',   pattern: '/:id/confirm',     file: '/auctions/[id]/confirm.js' },
+  { method: 'POST',   pattern: '/:id/reject',      file: '/auctions/[id]/reject.js' },
+  { method: 'GET',    pattern: '/:id/similar',     file: '/auctions/[id]/similar.js' },
+  { method: 'POST',   pattern: '/:id/view',        file: '/auctions/[id]/view.js' },
 ];
 
 // Build regex per route

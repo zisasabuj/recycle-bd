@@ -53,18 +53,34 @@ async function handlePut(req, res, id, userId) {
     if (data.basePrice) data.basePrice = Number(data.basePrice);
     if (data.bidIncrement) data.bidIncrement = Number(data.bidIncrement);
 
-    // If client sent new image data URIs, upload to imgBB + extract URLs (Prisma expects String[])
-    if (Array.isArray(data.images) && data.images.length > 0 && typeof data.images[0] === 'string' && data.images[0].startsWith('data:')) {
-      const { uploadToImgBB } = await import('../../_lib/imgbb.js');
-      const uploaded = [];
-      for (const dataUri of data.images.slice(0, 5)) {
+    // Image handling for edit:
+    //   - req.body.keepImages (string[]) = existing URLs the user wants to keep (after X-clicks)
+    //   - req.body.images    (string[]) = new file data URIs to upload to imgBB
+    // We merge: keepImages (URLs already) + newly uploaded URLs → final images[]
+    if (editMode === 'OPEN') {
+      const keepImages = Array.isArray(req.body.keepImages) ? req.body.keepImages.filter(u => typeof u === 'string' && u.startsWith('http')) : [];
+      const newUris = Array.isArray(req.body.images) ? req.body.images.filter(u => typeof u === 'string' && u.startsWith('data:')) : [];
+      const finalImages = [...keepImages];
+
+      if (newUris.length > 0) {
         try {
-          const result = await uploadToImgBB(dataUri);
-          const url = typeof result === 'string' ? result : result?.url;
-          if (url) uploaded.push(url);
-        } catch (e) { console.error('[imgBB upload]', e); }
+          const { uploadToImgBB } = await import('../../_lib/imgbb.js');
+          for (const dataUri of newUris.slice(0, 5 - keepImages.length)) {
+            try {
+              const result = await uploadToImgBB(dataUri);
+              const url = typeof result === 'string' ? result : result?.url;
+              if (url) finalImages.push(url);
+            } catch (e) { console.error('[imgBB upload]', e); }
+          }
+        } catch (e) {
+          console.error('[imgBB import]', e);
+        }
       }
-      data.images = uploaded;
+
+      data.images = finalImages.slice(0, 5);
+    } else {
+      // CLOSE mode: strip any image-related fields to be safe (description-only)
+      delete data.images;
     }
 
     const updated = await prisma.auction.update({

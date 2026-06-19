@@ -1259,19 +1259,15 @@ async function openEditModal(auctionId) {
     document.getElementById('area').value = auction.area || '';
     document.getElementById('district').value = auction.district || '';
     document.getElementById('thana').value = auction.thana || '';
-    // Show existing images as preview
-    const preview = document.getElementById('imagePreview');
-    if (auction.images && auction.images.length > 0) {
-      preview.innerHTML = auction.images.map(u => `<div class="img-thumb existing"><img src="${escapeAttr(imgUrl(u))}"></div>`).join('') + '<div class="img-thumb new-hint">+ new image(s) will replace above</div>';
-    } else {
-      preview.innerHTML = '<span class="placeholder">No images yet</span>';
-    }
+    // Preload existing images (each will get an X button via renderPreview)
+    existingImageUrls = Array.isArray(auction.images) ? [...auction.images] : [];
+    // Reset selected files (uploading new ones will append to existingImageUrls)
+    selectedFiles = [];
+    document.getElementById('images').value = '';
+    renderPreview();
     // Switch modal title
     const h2 = document.querySelector('#createModal h2');
     if (h2) h2.textContent = '✏️ Edit Auction';
-    // Reset selected files (uploading new ones will replace)
-    selectedFiles = [];
-    document.getElementById('images').value = '';
     // Apply current edit mode (OPEN = all editable, CLOSE = description only)
     applyEditModeToForm();
     // Open
@@ -1286,6 +1282,8 @@ function closeCreateModal() {
   document.getElementById('createError').textContent = '';
   // Reset edit mode
   editingAuctionId = null;
+  existingImageUrls = [];
+  selectedFiles = [];
   const h2 = document.querySelector('#createModal h2');
   if (h2) h2.textContent = '＋ Post Item for Auction';
   // Reset locked fields for fresh create
@@ -1306,6 +1304,9 @@ function closeCreateModal() {
 
 // Image preview + validation
 let selectedFiles = [];
+// Keep existing data URI URLs from edit-mode for X-remove tracking
+let existingImageUrls = []; // for edit mode: preloaded URLs the user can remove
+
 document.addEventListener('change', (e) => {
   if (e.target.id === 'images') {
     selectedFiles = Array.from(e.target.files).slice(0, 5);
@@ -1323,10 +1324,30 @@ document.addEventListener('change', (e) => {
       }
       const reader = new FileReader();
       reader.onload = (ev) => {
+        const wrap = document.createElement('div');
+        wrap.className = 'preview-item';
         const img = document.createElement('img');
         img.src = ev.target.result;
         img.title = file.name;
-        preview.appendChild(img);
+        const x = document.createElement('button');
+        x.type = 'button';
+        x.className = 'preview-x';
+        x.title = 'Remove this image';
+        x.innerHTML = '×';
+        x.onclick = () => {
+          selectedFiles.splice(idx, 1);
+          // Rebuild preview
+          renderPreview();
+          // Sync the underlying file input so re-selection is consistent
+          try {
+            const dt = new DataTransfer();
+            selectedFiles.forEach(f => dt.items.add(f));
+            e.target.files = dt.files;
+          } catch (_) { /* some browsers don't allow programmatic DataTransfer on file inputs */ }
+        };
+        wrap.appendChild(img);
+        wrap.appendChild(x);
+        preview.appendChild(wrap);
       };
       reader.readAsDataURL(file);
     });
@@ -1334,14 +1355,79 @@ document.addEventListener('change', (e) => {
   }
 });
 
+function renderPreview() {
+  const preview = document.getElementById('imagePreview');
+  preview.innerHTML = '';
+  if (selectedFiles.length === 0 && existingImageUrls.length === 0) {
+    preview.innerHTML = '<span class="placeholder">No images selected</span>';
+    return;
+  }
+  // Show existing (edit-mode) images first
+  existingImageUrls.forEach((url, idx) => {
+    const wrap = document.createElement('div');
+    wrap.className = 'preview-item existing';
+    const img = document.createElement('img');
+    img.src = url;
+    img.title = 'Existing image';
+    const x = document.createElement('button');
+    x.type = 'button';
+    x.className = 'preview-x';
+    x.title = 'Remove this image';
+    x.innerHTML = '×';
+    x.onclick = () => {
+      existingImageUrls.splice(idx, 1);
+      renderPreview();
+    };
+    wrap.appendChild(img);
+    wrap.appendChild(x);
+    preview.appendChild(wrap);
+  });
+  // Then newly picked files
+  selectedFiles.forEach((file, idx) => {
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const wrap = document.createElement('div');
+      wrap.className = 'preview-item';
+      const img = document.createElement('img');
+      img.src = ev.target.result;
+      img.title = file.name;
+      const x = document.createElement('button');
+      x.type = 'button';
+      x.className = 'preview-x';
+      x.title = 'Remove this image';
+      x.innerHTML = '×';
+      x.onclick = () => {
+        selectedFiles.splice(idx, 1);
+        renderPreview();
+        const fileInput = document.getElementById('images');
+        if (fileInput) {
+          try {
+            const dt = new DataTransfer();
+            selectedFiles.forEach(f => dt.items.add(f));
+            fileInput.files = dt.files;
+          } catch (_) {}
+        }
+      };
+      wrap.appendChild(img);
+      wrap.appendChild(x);
+      preview.appendChild(wrap);
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
 async function handleCreateAuction(e) {
   e.preventDefault();
   const errorEl = document.getElementById('createError');
   errorEl.textContent = '';
 
-  // Create mode requires at least 1 image; edit mode allows no new images
+  // Create mode requires at least 1 image; edit mode allows no new images (existingImageUrls counts)
   if (!editingAuctionId && selectedFiles.length === 0) {
     errorEl.textContent = 'Please select at least one image';
+    return;
+  }
+  if (editingAuctionId && selectedFiles.length === 0 && existingImageUrls.length === 0) {
+    errorEl.textContent = 'Please keep at least one image or upload a new one';
     return;
   }
 
@@ -1375,6 +1461,9 @@ async function handleCreateAuction(e) {
     let res, data;
     if (editingAuctionId) {
       // ===== EDIT MODE =====
+      // Send: keepImages = existing URLs user did NOT delete (still in existingImageUrls)
+      //       images = newly picked files as data URIs (uploaded to imgBB)
+      // Backend will merge: keepImages + newly uploaded → final images[]
       const jsonBody = {
         title: document.getElementById('title').value,
         description: document.getElementById('description').value,
@@ -1386,6 +1475,7 @@ async function handleCreateAuction(e) {
         area: document.getElementById('area').value,
         district: document.getElementById('district').value,
         thana: document.getElementById('thana').value,
+        keepImages: existingImageUrls,
         images: imageDataUris.length > 0 ? imageDataUris : undefined
       };
       res = await fetch(`${API_URL}/api/auction/${editingAuctionId}`, {
