@@ -1,7 +1,7 @@
 // POST /api/auctions/:id/confirm — winner confirms purchase
-import { prisma } from '../../../../_lib/prisma.js';
-import { withCors, json, error } from '../../../../_lib/middleware.js';
-import { getUserFromHeader } from '../../../../_lib/auth.js';
+import { prisma } from '../../../_lib/prisma.js';
+import { withCors, json, error } from '../../../_lib/middleware.js';
+import { getUserFromHeader } from '../../../_lib/auth.js';
 
 export default withCors(async (req, res) => {
   const id = req.query.id;

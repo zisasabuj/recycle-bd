@@ -1,6 +1,6 @@
 // GET /api/auctions/:id/similar — same category, same city, max 4
-import { prisma } from '../../../../_lib/prisma.js';
-import { withCors, json, error } from '../../../../_lib/middleware.js';
+import { prisma } from '../../../_lib/prisma.js';
+import { withCors, json, error } from '../../../_lib/middleware.js';
 
 export default withCors(async (req, res) => {
   const id = req.query.id;
