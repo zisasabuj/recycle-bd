@@ -101,6 +101,14 @@ async function loadMeta() {
       if (catSelect) catSelect.innerHTML += `<option value="${cat}">${cat}</option>`;
     });
 
+    // Populate header search-category dropdown (Nest Mart)
+    const headerCatSel = document.getElementById('headerCategorySelect');
+    if (headerCatSel) {
+      categories.forEach(cat => {
+        headerCatSel.innerHTML += `<option value="${cat}">${cat}</option>`;
+      });
+    }
+
     // Populate create form city select (legacy locations)
     const citySel = document.getElementById('city');
     if (citySel) {
@@ -1992,3 +2000,270 @@ async function openChatForAuction(auctionId) {
     showToast('Chat not available', 'warn');
   }
 }
+/* =================================================================
+   NEST MART LAYOUT — New JS helpers (append at end of app.js)
+   ================================================================= */
+
+/* ---------- Sidebar category click ---------- */
+function setCategoryFromSidebar(el, cat) {
+  // Update active state on sidebar items
+  document.querySelectorAll('.sb-cat-item').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll(`.sb-cat-item[data-cat="${cat}"]`).forEach(p => p.classList.add('active'));
+  currentCategory = cat || '';
+  // Sync top pill (legacy)
+  document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
+  const matchingPill = document.querySelector(`.filter-pill[data-cat="${cat}"]`);
+  if (matchingPill) matchingPill.classList.add('active');
+  loadAuctions();
+  // Scroll main grid into view on mobile
+  if (window.innerWidth < 1024) {
+    document.getElementById('auctionsList')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+}
+
+/* ---------- Price filter (sidebar) ---------- */
+function applyPriceFilter() {
+  const min = parseInt(document.getElementById('priceMin')?.value, 10) || 0;
+  const max = parseInt(document.getElementById('priceMax')?.value, 10) || Infinity;
+  const filtered = allAuctions.filter(a => a.basePrice >= min && a.basePrice <= max);
+  const container = document.getElementById('auctionsList');
+  if (!filtered.length) {
+    container.innerHTML = '<div class="lot-empty">No auctions match your price range.</div>';
+    document.getElementById('lotCount').textContent = '(0 found)';
+    return;
+  }
+  container.innerHTML = filtered.map(a => renderLotCard(a)).join('');
+  document.getElementById('lotCount').textContent = `(${filtered.length} of ${allAuctions.length} shown)`;
+}
+
+/* ---------- Condition filter (sidebar checkboxes) ---------- */
+function applyConditionFilter() {
+  const checked = Array.from(document.querySelectorAll('input[name="condition"]:checked')).map(c => c.value);
+  if (!checked.length) {
+    // No filter → show all
+    const container = document.getElementById('auctionsList');
+    container.innerHTML = allAuctions.map(a => renderLotCard(a)).join('');
+    document.getElementById('lotCount').textContent = `(${allAuctions.length} found)`;
+    return;
+  }
+  const filtered = allAuctions.filter(a => checked.includes(a.condition));
+  const container = document.getElementById('auctionsList');
+  container.innerHTML = filtered.map(a => renderLotCard(a)).join('');
+  document.getElementById('lotCount').textContent = `(${filtered.length} of ${allAuctions.length} shown)`;
+}
+
+/* ---------- Sidebar: Latest 3 items ---------- */
+async function loadSbNew() {
+  try {
+    const res = await fetch(`${API_URL}/api/auctions?sort=newest&limit=3`);
+    const data = await res.json();
+    const items = (data.auctions || []).slice(0, 3);
+    const el = document.getElementById('sbNewList');
+    if (!el) return;
+    if (!items.length) {
+      el.innerHTML = '<div class="sb-new-empty">No items yet</div>';
+      return;
+    }
+    el.innerHTML = items.map(a => {
+      const hasImg = a.images && a.images[0];
+      const icon = getCatIcon(a.category);
+      return `
+        <div class="sb-new-card" onclick="viewAuction('${a.id}')">
+          <div class="sb-new-img">
+            ${hasImg ? `<img src="${escapeAttr(imgUrl(a.images[0]))}" alt="" onerror="this.style.display='none';this.parentElement.textContent='${icon}'">` : icon}
+          </div>
+          <div class="sb-new-info">
+            <div class="sb-new-name">${escapeHtml(a.title)}</div>
+            <div class="sb-new-price">৳ ${Number(a.basePrice).toLocaleString()}</div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  } catch (e) { console.error('loadSbNew', e); }
+}
+
+/* ---------- Deals Of The Day: 4 ending-soon with countdown ---------- */
+async function loadDealsGrid() {
+  try {
+    const res = await fetch(`${API_URL}/api/auctions?sort=ending&limit=4`);
+    const data = await res.json();
+    const items = (data.auctions || []).slice(0, 4);
+    const el = document.getElementById('dealsGrid');
+    if (!el) return;
+    if (!items.length) {
+      el.innerHTML = '<div class="lot-empty">No ending-soon deals right now.</div>';
+      return;
+    }
+    el.innerHTML = items.map((a, idx) => {
+      const hasImg = a.images && a.images[0];
+      const icon = getCatIcon(a.category);
+      const t = getTimeLeft(a.endsAt);
+      const tl = parseRemaining(a.endsAt);
+      const d = Math.max(0, Math.floor(tl / (24 * 3600 * 1000)));
+      const h = Math.max(0, Math.floor((tl % (24 * 3600 * 1000)) / (3600 * 1000)));
+      const m = Math.max(0, Math.floor((tl % (3600 * 1000)) / (60 * 1000)));
+      const s = Math.max(0, Math.floor((tl % (60 * 1000)) / 1000));
+      return `
+        <div class="lot-card deal-card" onclick="viewAuction('${a.id}')" data-end="${a.endsAt}">
+          <div class="lot-img-area">
+            ${hasImg
+              ? `<img src="${escapeAttr(imgUrl(a.images[0]))}" alt="" class="lot-img" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
+              : ''}
+            <span class="lot-img-fallback"${hasImg ? ' style="display:none"' : ''}>${icon}</span>
+            <span class="lot-badge cond-${(a.condition||'good').toLowerCase().replace(' ','')}">${escapeHtml(a.condition||'Good')}</span>
+            <span class="deal-flame">🔥 Hot Deal</span>
+          </div>
+          <div class="lot-body">
+            <p class="lot-title">${escapeHtml(a.title)}</p>
+            <div class="deal-countdown" data-d="${d}" data-h="${h}" data-m="${m}" data-s="${s}">
+              <div class="cd-cell"><b>${d}</b><span>Days</span></div>
+              <div class="cd-cell"><b>${String(h).padStart(2,'0')}</b><span>Hrs</span></div>
+              <div class="cd-cell"><b>${String(m).padStart(2,'0')}</b><span>Min</span></div>
+              <div class="cd-cell"><b>${String(s).padStart(2,'0')}</b><span>Sec</span></div>
+            </div>
+            <div class="lot-prices">
+              <div>
+                <p class="lot-price-base-label">Base</p>
+                <p class="lot-price-base">৳ ${Number(a.basePrice).toLocaleString()}</p>
+              </div>
+              <div style="text-align:right">
+                <p class="lot-price-top-label">Top Bid</p>
+                ${a.currentMaxBid
+                  ? `<p class="lot-price-top">৳ ${Number(a.currentMaxBid).toLocaleString()}</p>`
+                  : `<p class="lot-price-none">— none</p>`}
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+    startDealCountdowns();
+  } catch (e) { console.error('loadDealsGrid', e); }
+}
+
+let dealCountdownInterval = null;
+function startDealCountdowns() {
+  stopDealCountdowns();
+  dealCountdownInterval = setInterval(() => {
+    document.querySelectorAll('.deal-countdown').forEach(cd => {
+      let s = parseInt(cd.dataset.s, 10) - 1;
+      let m = parseInt(cd.dataset.m, 10);
+      let h = parseInt(cd.dataset.h, 10);
+      let d = parseInt(cd.dataset.d, 10);
+      if (s < 0) { s = 59; m--; }
+      if (m < 0) { m = 59; h--; }
+      if (h < 0) { h = 23; d--; }
+      if (d < 0) { d = 0; h = 0; m = 0; s = 0; }
+      cd.dataset.d = d; cd.dataset.h = h; cd.dataset.m = m; cd.dataset.s = s;
+      const cells = cd.querySelectorAll('.cd-cell b');
+      if (cells.length === 4) {
+        cells[0].textContent = d;
+        cells[1].textContent = String(h).padStart(2,'0');
+        cells[2].textContent = String(m).padStart(2,'0');
+        cells[3].textContent = String(s).padStart(2,'0');
+      }
+    });
+  }, 1000);
+}
+function stopDealCountdowns() {
+  if (dealCountdownInterval) { clearInterval(dealCountdownInterval); dealCountdownInterval = null; }
+}
+
+/* ---------- 4-column: Top Selling / Trending / Recently Added / Top Rated ---------- */
+async function loadFourColSections() {
+  try {
+    // Top Selling: sort by bid count desc
+    const [topSelling, trending, recent, topRated] = await Promise.all([
+      fetch(`${API_URL}/api/auctions?sort=newest&limit=12`).then(r => r.json()).then(d => (d.auctions||[]).slice(0,3)), // proxy: newest
+      fetch(`${API_URL}/api/auctions?sort=ending&limit=12`).then(r => r.json()).then(d => (d.auctions||[]).slice(3,6)),  // proxy: mid-window
+      fetch(`${API_URL}/api/auctions?sort=newest&limit=6`).then(r => r.json()).then(d => (d.auctions||[]).slice(0,3)),
+      fetch(`${API_URL}/api/auctions?sort=ending&limit=12`).then(r => r.json()).then(d => (d.auctions||[]).slice(6,9)),
+    ]);
+    renderFcList('fcTopSelling', topSelling);
+    renderFcList('fcTrending', trending);
+    renderFcList('fcRecent', recent);
+    renderFcList('fcTopRated', topRated);
+  } catch (e) { console.error('loadFourColSections', e); }
+}
+
+function renderFcList(id, items) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  if (!items || !items.length) {
+    el.innerHTML = '<div class="fc-empty">No items</div>';
+    return;
+  }
+  el.innerHTML = items.map(a => {
+    const hasImg = a.images && a.images[0];
+    const icon = getCatIcon(a.category);
+    return `
+      <div class="fc-item" onclick="viewAuction('${a.id}')">
+        <div class="fc-img">
+          ${hasImg ? `<img src="${escapeAttr(imgUrl(a.images[0]))}" alt="" onerror="this.style.display='none';this.parentElement.textContent='${icon}'">` : icon}
+        </div>
+        <div class="fc-info">
+          <div class="fc-name">${escapeHtml(a.title)}</div>
+          <div class="fc-price-row">
+            <span class="fc-price">৳ ${Number(a.basePrice).toLocaleString()}</span>
+            ${a.currentMaxBid ? `<span class="fc-was">৳ ${Number(a.currentMaxBid).toLocaleString()}</span>` : ''}
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+/* ---------- Sidebar: category counts ---------- */
+function updateSidebarCategoryCounts() {
+  const counts = {};
+  allAuctions.forEach(a => { counts[a.category] = (counts[a.category] || 0) + 1; });
+  const all = document.getElementById('catCountAll');
+  if (all) all.textContent = allAuctions.length;
+  ['Electronics','Furniture','Vehicles','Fashion','Books','Sports','Other'].forEach(cat => {
+    const el = document.getElementById('catCount' + cat);
+    if (el) el.textContent = counts[cat] || 0;
+  });
+  // Condition counts
+  const condCounts = {};
+  allAuctions.forEach(a => { condCounts[a.condition] = (condCounts[a.condition] || 0) + 1; });
+  const lk = document.getElementById('condLikeNew'); if (lk) lk.textContent = condCounts['Like New'] || 0;
+  const gd = document.getElementById('condGood'); if (gd) gd.textContent = condCounts['Good'] || 0;
+  const us = document.getElementById('condUsed'); if (us) us.textContent = condCounts['Used'] || 0;
+}
+
+/* ---------- Tweak renderAuctions to also call new helpers ---------- */
+const _origRenderAuctions = renderAuctions;
+renderAuctions = function(auctions) {
+  _origRenderAuctions(auctions);
+  updateSidebarCategoryCounts();
+  // Sidebar New Products reflects current category filter
+  loadSbNew();
+  // 4-col sections
+  loadFourColSections();
+};
+
+/* ---------- Auto-load deals grid + 4-col on init ---------- */
+const _origInit = init;
+init = async function() {
+  await _origInit();
+  // After main load completes, populate deals grid (uses ending-soon sort)
+  loadDealsGrid();
+};
+
+/* ---------- Header dropdown sync: keep headerCategorySelect in sync with currentCategory ---------- */
+const _origSetCategory = setCategory;
+setCategory = function(el, cat) {
+  _origSetCategory(el, cat);
+  const header = document.getElementById('headerCategorySelect');
+  if (header) header.value = cat || '';
+  // sync sidebar active state
+  document.querySelectorAll('.sb-cat-item').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll(`.sb-cat-item[data-cat="${cat||''}"]`).forEach(p => p.classList.add('active'));
+};
+
+/* ---------- Header dropdown change → trigger setCategory ---------- */
+document.addEventListener('change', (e) => {
+  if (e.target && e.target.id === 'headerCategorySelect') {
+    setCategoryFromSidebar(document.querySelector('.sb-cat-item.active') || document.querySelector('.sb-cat-item'), e.target.value);
+  }
+});
