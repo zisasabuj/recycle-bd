@@ -79,9 +79,11 @@ export default async function handler(req, res) {
     return res.status(200).end();
   }
 
-  // Build URL path from slug array (Vercel optional catch-all populates this)
-  // For /api/auction → slug is undefined; /api/auction/abc → ['abc']; /api/auction/abc/bids → ['abc', 'bids']
-  let slug = req.query.slug;
+  // Build URL path from slug array (Vercel optional catch-all populates this).
+  // For /api/auction → slug is undefined; /api/auction/abc → slug = 'abc'.
+  // Note: Vercel subdirectory catch-alls put slug in `req.query['[...slug]']`
+  // (literal key with brackets) on some paths — try both for compatibility.
+  let slug = req.query.slug ?? req.query['[...slug]'];
   // Vercel sometimes gives a string instead of an array — normalize
   if (typeof slug === 'string') slug = [slug];
   if (!slug || (Array.isArray(slug) && slug.length === 0)) slug = [];
