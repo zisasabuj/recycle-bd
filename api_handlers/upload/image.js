@@ -2,7 +2,7 @@
 // Why JSON instead of multipart? Vercel serverless has a 4.5MB body limit on
 // multipart parsing; base64-in-JSON works around that and keeps it simple.
 // Client should resize to <600px on the longest edge before sending.
-import { uploadBase64 } from '../_lib/imgbb.js';
+import { uploadToImgBB } from '../_lib/imgbb.js';
 import { withCors, withAuth, json, error } from '../_lib/middleware.js';
 
 export default withCors(withAuth(async (req, res) => {
@@ -16,7 +16,7 @@ export default withCors(withAuth(async (req, res) => {
     const urls = [];
     for (const dataUri of list) {
       if (typeof dataUri !== 'string') continue;
-      const url = await uploadBase64(dataUri);
+      const url = await uploadToImgBB(dataUri);
       urls.push(url);
     }
     if (urls.length === 0) return error(res, 400, 'No valid images uploaded');

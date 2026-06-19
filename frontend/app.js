@@ -1363,41 +1363,55 @@ async function handleCreateAuction(e) {
     // Show progress
     errorEl.innerHTML = '<div class="upload-progress">⏳ ' + (editingAuctionId ? 'Saving changes' : 'Uploading images') + '...</div>';
 
+    // Convert selected files to base64 data URIs (backend uploadToImgBB expects dataUri)
+    const toDataUri = (file) => new Promise((resolve, reject) => {
+      const r = new FileReader();
+      r.onload = () => resolve(r.result);
+      r.onerror = reject;
+      r.readAsDataURL(file);
+    });
+    const imageDataUris = await Promise.all(selectedFiles.slice(0, 5).map(toDataUri));
+
     let res, data;
     if (editingAuctionId) {
       // ===== EDIT MODE =====
-      // Image replace is optional in edit. If no new images, send JSON instead of multipart.
-      if (selectedFiles.length > 0) {
-        res = await fetch(`${API_URL}/api/auction/${editingAuctionId}`, {
-          method: 'PUT',
-          headers: { Authorization: `Bearer ${token}` },
-          body: formData
-        });
-      } else {
-        const jsonBody = {
-          title: document.getElementById('title').value,
-          description: document.getElementById('description').value,
-          category: document.getElementById('category').value,
-          condition: document.getElementById('condition').value,
-          basePrice: document.getElementById('basePrice').value,
-          bidIncrement: document.getElementById('bidIncrement').value || 100,
-          city: document.getElementById('city').value,
-          area: document.getElementById('area').value,
-          district: document.getElementById('district').value,
-          thana: document.getElementById('thana').value
-        };
-        res = await fetch(`${API_URL}/api/auction/${editingAuctionId}`, {
-          method: 'PUT',
-          headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify(jsonBody)
-        });
-      }
+      const jsonBody = {
+        title: document.getElementById('title').value,
+        description: document.getElementById('description').value,
+        category: document.getElementById('category').value,
+        condition: document.getElementById('condition').value,
+        basePrice: document.getElementById('basePrice').value,
+        bidIncrement: document.getElementById('bidIncrement').value || 100,
+        city: document.getElementById('city').value,
+        area: document.getElementById('area').value,
+        district: document.getElementById('district').value,
+        thana: document.getElementById('thana').value,
+        images: imageDataUris.length > 0 ? imageDataUris : undefined
+      };
+      res = await fetch(`${API_URL}/api/auction/${editingAuctionId}`, {
+        method: 'PUT',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(jsonBody)
+      });
     } else {
       // ===== CREATE MODE =====
+      const jsonBody = {
+        title: document.getElementById('title').value,
+        description: document.getElementById('description').value,
+        category: document.getElementById('category').value,
+        condition: document.getElementById('condition').value,
+        basePrice: document.getElementById('basePrice').value,
+        bidIncrement: document.getElementById('bidIncrement').value || 100,
+        city: document.getElementById('city').value,
+        area: document.getElementById('area').value,
+        district: document.getElementById('district').value,
+        thana: document.getElementById('thana').value,
+        images: imageDataUris
+      };
       res = await fetch(`${API_URL}/api/x/upload-auction`, {
         method: 'POST',
-        headers: { Authorization: `Bearer ${token}` }, // NO Content-Type - browser sets multipart boundary
-        body: formData
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(jsonBody)
       });
     }
     data = await res.json();

@@ -41,7 +41,7 @@ export default withCors(withAuth(async (req, res) => {
     const list = Array.isArray(images) ? images : (images ? [images] : []);
     const uploaded = [];
     for (const dataUri of list.slice(0, 5)) {
-      try { uploaded.push(await uploadBase64(dataUri)); }
+      try { uploaded.push(await uploadToImgBB(dataUri)); }
       catch (e) { console.error('[imgBB upload]', e); }
     }
 
