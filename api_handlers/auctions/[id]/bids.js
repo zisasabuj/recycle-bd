@@ -21,6 +21,6 @@ export default withCors(async (req, res) => {
     return json(res, 200, { bids });
   } catch (err) {
     console.error('[get bids]', err);
-    return error(res, 500, 'Failed to get bids');
+    return error(res, 500, `Failed to get bids: ${err.message}`);
   }
 });
