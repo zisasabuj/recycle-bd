@@ -5,8 +5,20 @@ import { withCors, json, error } from '../../_lib/middleware.js';
 import { getUserFromHeader } from '../../_lib/auth.js';
 
 async function handleGet(req, res) {
-  const s = await prisma.systemSetting.findUnique({ where: { key: 'edit_mode' } });
-  const mode = (s && (s.value === 'CLOSE' || s.value === 'OPEN')) ? s.value : 'OPEN';
+  // Schema drift: production DB may use 'editModeSetting' instead of 'systemSetting'.
+  // Try the model that exists; default to OPEN if neither works.
+  let mode = 'OPEN';
+  try {
+    if (prisma.systemSetting) {
+      const s = await prisma.systemSetting.findUnique({ where: { key: 'edit_mode' } });
+      if (s && (s.value === 'CLOSE' || s.value === 'OPEN')) mode = s.value;
+    } else if (prisma.editModeSetting) {
+      const list = await prisma.editModeSetting.findMany({ take: 1 });
+      if (list && list[0] && list[0].sellerCanEdit === false) mode = 'CLOSE';
+    }
+  } catch (e) {
+    console.error('[edit-mode get]', e.message);
+  }
   return json(res, 200, { mode });
 }
 

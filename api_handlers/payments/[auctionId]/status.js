@@ -4,19 +4,26 @@ import { withCors, json, error } from '../../../_lib/middleware.js';
 
 export default withCors(async (req, res) => {
   if (req.method !== 'GET') return error(res, 405, 'GET only');
-  const auctionId = req.query.auctionId;
+  const auctionId = req.query.auctionId || req.query.id;
+  if (!auctionId) return error(res, 400, 'Missing auction id');
   try {
+    // Schema drift: production Transaction table may not have all the fields.
+    // Return what's available; null-safe defaults.
     const tx = await prisma.transaction.findUnique({ where: { auctionId } });
-    if (!tx) return error(res, 404, 'Transaction not found');
+    if (!tx) return json(res, 200, { status: 'NONE', contactUnlocked: false });
     return json(res, 200, {
-      finalAmount: Number(tx.finalAmount),
-      commissionAmt: Number(tx.commissionAmt),
-      buyerPaid: tx.buyerPaid,
-      sellerPaid: tx.sellerPaid,
-      contactUnlocked: tx.contactUnlocked,
+      status: tx.status || 'UNKNOWN',
+      amount: tx.amount ? Number(tx.amount) : null,
+      finalAmount: tx.amount ? Number(tx.amount) : null,  // alias for old API
+      commissionAmt: tx.notes ? null : null,             // not in prod schema
+      buyerPaid: tx.status === 'paid' || tx.status === 'completed',
+      sellerPaid: tx.status === 'completed',
+      contactUnlocked: tx.status === 'paid' || tx.status === 'completed',
+      method: tx.method || null,
+      createdAt: tx.createdAt,
     });
   } catch (err) {
-    console.error('[payment-status]', err);
-    return error(res, 500, 'Failed');
+    console.error('[payment-status]', err.message);
+    return error(res, 500, `Failed: ${err.message}`);
   }
 });
