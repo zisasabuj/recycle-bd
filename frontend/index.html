@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Recycle — Sealed-Bid Auctions Bangladesh</title>
-  <link rel="stylesheet" href="styles.css?v=47">
+  <link rel="stylesheet" href="styles.css?v=48">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -163,39 +163,7 @@
               </div>
             </div>
 
-            <!-- Sidebar: Filter by Price + Condition -->
-            <div class="sb-card" data-collapsible="true" data-collapsed="true">
-              <div class="sb-card-header" onclick="toggleSbCard(this)" role="button" tabindex="0" aria-expanded="false">
-                <h3 class="sb-title">Filter by price</h3>
-                <span class="sb-chevron">▾</span>
-              </div>
-              <div class="sb-card-body">
-              <div class="price-range">
-                <div class="price-row">
-                  <div class="price-input">
-                    <span class="prefix">৳</span>
-                    <input type="text" inputmode="numeric" pattern="[0-9]*" id="priceMin" placeholder="Min" maxlength="9" oninput="applyPriceFilter()">
-                  </div>
-                  <span class="price-dash">–</span>
-                  <div class="price-input">
-                    <span class="prefix">৳</span>
-                    <input type="text" inputmode="numeric" pattern="[0-9]*" id="priceMax" placeholder="Max" maxlength="9" oninput="applyPriceFilter()">
-                  </div>
-                </div>
-                <input type="range" id="priceRange" min="0" max="200000" step="500" value="200000" oninput="document.getElementById('priceMax').value=this.value; document.getElementById('priceMaxLabel').textContent='৳ '+Number(this.value).toLocaleString(); applyPriceFilter()">
-                <div class="price-bounds"><span>৳ 0</span><span id="priceMaxLabel">৳ 200,000</span></div>
-              </div>
-
-              <h4 class="sb-subtitle">Item Condition</h4>
-              <ul class="sb-check-list">
-                <li><label><input type="checkbox" name="condition" value="Like New" onchange="applyConditionFilter()"> Like New <span>(<span id="condLikeNew">0</span>)</span></label></li>
-                <li><label><input type="checkbox" name="condition" value="Good" onchange="applyConditionFilter()"> Good <span>(<span id="condGood">0</span>)</span></label></li>
-                <li><label><input type="checkbox" name="condition" value="Used" onchange="applyConditionFilter()"> Used <span>(<span id="condUsed">0</span>)</span></label></li>
-              </ul>
-
-              <button class="sb-filter-btn" onclick="applyPriceFilter()">🔍 Filter</button>
-              </div>
-            </div>
+            
 
             <!-- Sidebar: New products (latest 3 auctions) -->
             <div class="sb-card" data-collapsible="true" data-collapsed="true">
@@ -248,7 +216,7 @@
               </div>
             </section>
 
-            <!-- Filter Bar (replaces Nest Mart category tabs visually) -->
+            <!-- Filter Bar (sort + location + price + condition) -->
             <div class="filter-bar">
               <div class="filter-left">
                 <select id="topSort" onchange="loadAuctions()">
@@ -258,10 +226,26 @@
                   <option value="price-desc">Price: High to Low</option>
                 </select>
               </div>
-              <div class="filter-right">
-                <select id="thanaFilter" onchange="loadAuctions()">
+              <div class="filter-mid">
+                <select id="districtFilter" onchange="updateThanaFilter(); loadAuctions();" aria-label="District">
+                  <option value="">All Districts</option>
+                </select>
+                <select id="thanaFilter" onchange="loadAuctions()" aria-label="Area/Thana">
                   <option value="">All Areas</option>
                 </select>
+              </div>
+              <div class="filter-right">
+                <div class="filter-price">
+                  <div class="filter-price-input">
+                    <span class="prefix">৳</span>
+                    <input type="text" inputmode="numeric" pattern="[0-9]*" id="priceMin" placeholder="Min" maxlength="9" oninput="applyPriceFilter()">
+                  </div>
+                  <span class="price-dash">–</span>
+                  <div class="filter-price-input">
+                    <span class="prefix">৳</span>
+                    <input type="text" inputmode="numeric" pattern="[0-9]*" id="priceMax" placeholder="Max" maxlength="9" oninput="applyPriceFilter()">
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -703,6 +687,6 @@
   <button class="icon-btn" id="settingsBtn" onclick="openSettingsModal()" style="display:none" title="Settings (Admin only)">⚙️</button>
   <span class="notif-dot" id="notifDot" style="display:none"></span>
 
-  <script src="app.js?v=41"></script>
+  <script src="app.js?v=42"></script>
 </body>
 </html>

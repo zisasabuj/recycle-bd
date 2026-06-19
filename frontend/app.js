@@ -76,6 +76,7 @@ async function loadMeta() {
     const bdData = await bdRes.json();
     bdLocations = bdData.locations;
     bdDistricts = bdData.districts;
+    populateDistrictFilter();
 
     // City filter dropdown (primary location filter)
     const cityFilter = document.getElementById('districtFilter');
@@ -145,18 +146,36 @@ function updateThanas() {
   }
 }
 
-// Populate Area (thana) filter dropdown based on selected City filter
-function updateThanaFilter() {
-  const city = document.getElementById('districtFilter').value;
-  const areaSelect = document.getElementById('thanaFilter');
-  areaSelect.innerHTML = '<option value="">All Areas</option>';
-  if (city && locations[city]) {
-    locations[city].forEach(a => {
-      areaSelect.innerHTML += `<option value="${a}">${a}</option>`;
+// Populate District filter dropdown from bdLocations (64 districts)
+function populateDistrictFilter() {
+  const districtFilter = document.getElementById('districtFilter');
+  if (!districtFilter) return;
+  districtFilter.innerHTML = '<option value="">All Districts</option>';
+  if (bdDistricts && bdDistricts.length) {
+    bdDistricts.forEach(d => {
+      districtFilter.innerHTML += `<option value="${d.name}">${d.name}</option>`;
     });
-    areaSelect.disabled = false;
+  } else if (bdLocations) {
+    // fallback: derive keys from bdLocations map
+    Object.keys(bdLocations).forEach(d => {
+      districtFilter.innerHTML += `<option value="${d}">${d}</option>`;
+    });
+  }
+}
+
+// Cascade Thana (Area) dropdown from selected District
+function updateThanaFilter() {
+  const district = document.getElementById('districtFilter').value;
+  const thanaSelect = document.getElementById('thanaFilter');
+  if (!thanaSelect) return;
+  thanaSelect.innerHTML = '<option value="">All Areas</option>';
+  if (district && bdLocations[district]) {
+    bdLocations[district].forEach(t => {
+      thanaSelect.innerHTML += `<option value="${t}">${t}</option>`;
+    });
+    thanaSelect.disabled = false;
   } else {
-    areaSelect.disabled = false;  // keep enabled so user can browse all
+    thanaSelect.disabled = false;  // keep enabled so user can browse all
   }
 }
 
@@ -881,14 +900,14 @@ function flashBidUpdate() {
 let currentAuction = null;
 
 async function loadAuctions() {
-  const city = document.getElementById('districtFilter')?.value || '';
-  const area = document.getElementById('thanaFilter')?.value || '';
+  const district = document.getElementById('districtFilter')?.value || '';
+  const thana = document.getElementById('thanaFilter')?.value || '';
   const category = currentCategory || '';
   const search = document.getElementById('searchInput')?.value || '';
   const sort = document.getElementById('topSort')?.value || 'ending';
   const params = new URLSearchParams();
-  if (city) params.set('city', city);
-  if (area) params.set('area', area);
+  if (district) params.set('district', district);
+  if (thana) params.set('thana', thana);
   if (category) params.set('category', category);
   if (search) params.set('search', search);
   if (sort) params.set('sort', sort);
