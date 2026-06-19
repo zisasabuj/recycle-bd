@@ -2847,6 +2847,24 @@ body {
   transition: background .15s;
 }
 .nav-link:hover { background: var(--color-purple-bg); color: var(--color-purple); }
+
+/* Sell Item CTA — visually distinct so users spot it */
+.nav-link.is-sell {
+  background: linear-gradient(135deg, #6b4eff, #4f3ad8);
+  color: #fff !important;
+  margin-left: 6px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(107,78,255,0.35);
+  transition: transform .15s, box-shadow .15s;
+}
+.nav-link.is-sell:hover {
+  background: linear-gradient(135deg, #7c63ff, #5e48e6);
+  color: #fff !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(107,78,255,0.45);
+}
 .nav-link.active { background: var(--color-purple-bg); color: var(--color-purple); }
 .nl-ico { font-size: 14px; }
 
