@@ -90,6 +90,8 @@ const routes = [
   { method: 'GET',  pattern: '/admin/settings/edit-mode',                     file: '/admin/settings/edit-mode.js' },
   { method: 'POST', pattern: '/admin/settings/edit-mode',                     file: '/admin/settings/edit-mode.js' },
   { method: 'PATCH',pattern: '/admin/settings/edit-mode',                     file: '/admin/settings/edit-mode.js' },
+  { method: 'GET',  pattern: '/admin/settings/hero-stats',                    file: '/admin/settings/hero-stats.js' },
+  { method: 'PUT',  pattern: '/admin/settings/hero-stats',                    file: '/admin/settings/hero-stats.js' },
 
   // Setup (one-time)
   { method: 'POST', pattern: '/setup/import-dump',                            file: '/setup/import-dump.js' },
@@ -105,6 +107,7 @@ const routes = [
   { method: 'GET',  pattern: '/settings/edit-mode',                           file: '/settings/edit-mode.js' },
   { method: 'POST', pattern: '/settings/edit-mode',                           file: '/settings/edit-mode.js' },
   { method: 'PATCH',pattern: '/settings/edit-mode',                           file: '/settings/edit-mode.js' },
+  { method: 'GET',  pattern: '/settings/hero-stats',                          file: '/settings/hero-stats.js' },
 ];
 
 // Convert URL pattern with :param to regex, extract param names

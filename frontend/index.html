@@ -58,9 +58,21 @@
           <span class="hdr-label">Cart</span>
           <span class="hdr-badge">0</span>
         </li>
-        <li class="hdr-action" onclick="handleProfileClick(event)" title="Account">
+        <li class="hdr-action account-action" id="accountAction" onclick="handleProfileClick(event)" title="Account">
           <span class="hdr-ico">👤</span>
           <span class="hdr-label" id="hdrAccountLabel">Account</span>
+          <div class="account-dropdown" id="accountDropdown" style="display:none" onclick="event.stopPropagation()">
+            <div class="account-dropdown-header">
+              <div class="account-dropdown-title" id="accountDropTitle">Welcome to Recycle</div>
+              <div class="account-dropdown-sub" id="accountDropSub">Sign in to bid &amp; sell</div>
+            </div>
+            <button class="account-dropdown-item" onclick="openAuthModal();closeAccountDropdown();">🔑 Login</button>
+            <button class="account-dropdown-item" onclick="openAuthModalRegister();closeAccountDropdown();">✨ Sign Up</button>
+            <div class="account-dropdown-divider" id="accountDropDivider" style="display:none"></div>
+            <button class="account-dropdown-item" id="accountDropProfile" style="display:none" onclick="openProfileModal();closeAccountDropdown();">✏️ Edit Profile</button>
+            <button class="account-dropdown-item" id="accountDropAdmin" style="display:none" onclick="openSettingsModal();closeAccountDropdown();">⚙️ Super Admin</button>
+            <button class="account-dropdown-item" id="accountDropLogout" style="display:none" onclick="logout();closeAccountDropdown();">🚪 Logout</button>
+          </div>
         </li>
         <li class="hdr-action mobile-only" id="hamburgerBtn" onclick="toggleMobileMenu()">
           <span class="hdr-ico">☰</span>
@@ -75,23 +87,19 @@
       <button class="browse-btn" onclick="document.getElementById('catsidebar').scrollIntoView({behavior:'smooth'})">
         <span class="browse-bars">🟰</span> Browse All Categories ▾
       </button>
-      <ul class="nav-links">
+      <ul class="nav-links" id="navLinks">
         <li class="nav-link active" data-view="browse" onclick="switchView('browse'); closeMobileMenu();">
           <span class="nl-ico">🏠</span> Home
         </li>
         <li class="nav-link" data-view="endingSoon" onclick="switchView('endingSoon'); closeMobileMenu();">
           <span class="nl-ico">🔥</span> Deals
         </li>
-        <li class="nav-link" onclick="openCreateModal(); closeMobileMenu();">
-          <span class="nl-ico">＋</span> Sell Item
+        <li class="nav-link" data-view="sellers" onclick="switchView('sellers'); closeMobileMenu();">
+          <span class="nl-ico">👥</span> Sellers
         </li>
-        <li class="nav-link" onclick="comingSoon('Shop'); closeMobileMenu();">Shop ▾</li>
-        <li class="nav-link" onclick="comingSoon('Sellers'); closeMobileMenu();">Sellers ▾</li>
-        <li class="nav-link" onclick="comingSoon('Mega menu'); closeMobileMenu();">Mega menu ▾</li>
-        <li class="nav-link" onclick="comingSoon('Blog'); closeMobileMenu();">Blog</li>
-        <li class="nav-link" onclick="comingSoon('Pages'); closeMobileMenu();">Pages ▾</li>
-        <li class="nav-link" onclick="comingSoon('Contact'); closeMobileMenu();">Contact</li>
-        <li class="nav-link" data-view="dashboard" onclick="switchView('dashboard'); closeMobileMenu();">📈 Dashboard</li>
+        <li class="nav-link" data-view="dashboard" onclick="switchView('dashboard'); closeMobileMenu();">
+          <span class="nl-ico">📈</span> Dashboard
+        </li>
       </ul>
       <div class="nav-support">
         <span class="nav-support-ico">🎧</span>
@@ -211,6 +219,10 @@
                   <div class="hero-stat">
                     <p class="hero-stat-num blue" id="heroDuration">48h</p>
                     <p class="hero-stat-label">Auction Duration</p>
+                  </div>
+                  <div class="hero-stat">
+                    <p class="hero-stat-num purple" id="heroUsers">0</p>
+                    <p class="hero-stat-label">Happy Users</p>
                   </div>
                 </div>
                 <span class="hero-deco hero-deco-1">🍊</span>
@@ -572,6 +584,29 @@
         </button>
       </div>
       <div class="settings-current">Current mode: <b id="currentEditModeDisplay">—</b></div>
+
+      <h3 style="margin-top:24px;font-size:14px;color:#6B7280;text-transform:uppercase;letter-spacing:0.5px">Hero Stats (Homepage Numbers)</h3>
+      <div class="hero-stats-edit">
+        <label class="hero-stat-edit-row">
+          <span>Active Auctions number</span>
+          <input type="text" id="hsActive" maxlength="16" placeholder="e.g. 0">
+        </label>
+        <label class="hero-stat-edit-row">
+          <span>Anonymity Rate</span>
+          <input type="text" id="hsAnon" maxlength="16" placeholder="e.g. 100%">
+        </label>
+        <label class="hero-stat-edit-row">
+          <span>Auction Duration</span>
+          <input type="text" id="hsDur" maxlength="16" placeholder="e.g. 48h">
+        </label>
+        <label class="hero-stat-edit-row">
+          <span>Users Count (optional)</span>
+          <input type="text" id="hsUsers" maxlength="16" placeholder="e.g. 0">
+        </label>
+      </div>
+      <button type="button" class="btn-primary" style="margin-top:12px" onclick="saveHeroStats()">💾 Save Hero Stats</button>
+      <p id="heroStatsMsg" class="success" style="display:none"></p>
+
       <p id="settingsError" class="error" style="display:none"></p>
     </div>
   </div>

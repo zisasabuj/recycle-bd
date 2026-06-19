@@ -445,23 +445,78 @@ function togglePasswordVisibility(inputId, btnId) {
 
 function handleProfileClick(event) {
   event.stopPropagation();
-  if (!currentUser) {
-    // Not logged in — open login modal
-    openAuthModal();
+  const dd = document.getElementById('accountDropdown');
+  if (!dd) {
+    // Fallback: no dropdown markup yet — old behavior
+    if (!currentUser) { openAuthModal(); return; }
+    const menu = document.getElementById('profileMenu');
+    if (menu) menu.style.display = (menu.style.display === 'block') ? 'none' : 'block';
     return;
   }
-  // Toggle profile dropdown
-  const menu = document.getElementById('profileMenu');
-  if (!menu) return;
-  const isOpen = menu.style.display === 'block';
+  const isOpen = dd.style.display === 'block';
   if (isOpen) {
-    menu.style.display = 'none';
+    dd.style.display = 'none';
   } else {
-    // Populate header
-    document.getElementById('pmName').textContent = currentUser.fullName || currentUser.username;
-    document.getElementById('pmEmail').textContent = currentUser.email || '';
-    menu.style.display = 'block';
+    refreshAccountDropdown();
+    dd.style.display = 'block';
   }
+}
+
+function closeAccountDropdown() {
+  const dd = document.getElementById('accountDropdown');
+  if (dd) dd.style.display = 'none';
+}
+
+function refreshAccountDropdown() {
+  const title = document.getElementById('accountDropTitle');
+  const sub = document.getElementById('accountDropSub');
+  const divider = document.getElementById('accountDropDivider');
+  const profile = document.getElementById('accountDropProfile');
+  const admin = document.getElementById('accountDropAdmin');
+  const logoutBtn = document.getElementById('accountDropLogout');
+  const loginBtn = dd_item('🔑 Login');
+  const signupBtn = dd_item('✨ Sign Up');
+  if (!title || !sub) return;
+  if (currentUser) {
+    title.textContent = currentUser.fullName || currentUser.username;
+    sub.textContent = currentUser.email || 'Signed in';
+    if (loginBtn) loginBtn.style.display = 'none';
+    if (signupBtn) signupBtn.style.display = 'none';
+    if (divider) divider.style.display = 'block';
+    if (profile) profile.style.display = 'block';
+    if (logoutBtn) logoutBtn.style.display = 'block';
+    if (admin) admin.style.display = (currentUser.role === 'SUPER_ADMIN') ? 'block' : 'none';
+  } else {
+    title.textContent = 'Welcome to Recycle';
+    sub.textContent = 'Sign in to bid & sell';
+    if (loginBtn) loginBtn.style.display = 'block';
+    if (signupBtn) signupBtn.style.display = 'block';
+    if (divider) divider.style.display = 'none';
+    if (profile) profile.style.display = 'none';
+    if (logoutBtn) logoutBtn.style.display = 'none';
+    if (admin) admin.style.display = 'none';
+  }
+}
+
+function dd_item(text) {
+  // tiny helper: find the dropdown item button by its visible label prefix
+  const dd = document.getElementById('accountDropdown');
+  if (!dd) return null;
+  for (const b of dd.querySelectorAll('.account-dropdown-item')) {
+    if ((b.textContent || '').includes(text)) return b;
+  }
+  return null;
+}
+
+function openAuthModalRegister() {
+  // Open modal in register mode (sign up)
+  if (typeof authMode !== 'undefined' && authMode !== 'register') {
+    toggleAuthMode();
+  } else if (typeof authMode === 'undefined') {
+    // Older code path: just open
+  }
+  const modal = document.getElementById('authModal');
+  if (modal) modal.style.display = 'flex';
 }
 
 function closeProfileMenu() {
@@ -472,8 +527,13 @@ function closeProfileMenu() {
 // Close profile menu when clicking anywhere else
 document.addEventListener('click', (e) => {
   const menu = document.getElementById('profileMenu');
-  if (!menu || menu.style.display === 'none') return;
-  if (!e.target.closest('.topbar-user')) closeProfileMenu();
+  if (menu && menu.style.display !== 'none' && !e.target.closest('.topbar-user')) {
+    menu.style.display = 'none';
+  }
+  const dd = document.getElementById('accountDropdown');
+  if (dd && dd.style.display === 'block' && !e.target.closest('#accountAction')) {
+    dd.style.display = 'none';
+  }
 });
 
 function openProfileModal() {
@@ -520,7 +580,56 @@ async function openSettingsModal() {
   document.getElementById('settingsModal').style.display = 'flex';
   const err = document.getElementById('settingsError');
   if (err) { err.style.display = 'none'; err.textContent = ''; }
+  const msg = document.getElementById('heroStatsMsg');
+  if (msg) { msg.style.display = 'none'; msg.textContent = ''; }
   await fetchEditMode();
+  await loadHeroStatsIntoForm();
+}
+
+async function loadHeroStatsIntoForm() {
+  // Pre-fill inputs with current admin-set values
+  try {
+    const r = await fetch(`${API_URL}/api/settings/hero-stats`);
+    if (!r.ok) return;
+    const s = await r.json();
+    const set = (id, v) => { const el = document.getElementById(id); if (el) el.value = v || ''; };
+    set('hsActive', s.hero_active_count);
+    set('hsAnon',   s.hero_anonymity_pct);
+    set('hsDur',    s.hero_duration_label);
+    set('hsUsers',  s.hero_users_count);
+  } catch (e) { /* silent */ }
+}
+
+async function saveHeroStats() {
+  if (!token) { alert('Sign in required'); return; }
+  const body = {};
+  const read = (id, key) => { const el = document.getElementById(id); if (el && el.value.trim()) body[key] = el.value.trim(); };
+  read('hsActive', 'hero_active_count');
+  read('hsAnon',   'hero_anonymity_pct');
+  read('hsDur',    'hero_duration_label');
+  read('hsUsers',  'hero_users_count');
+  if (Object.keys(body).length === 0) { alert('Enter at least one value'); return; }
+  const msg = document.getElementById('heroStatsMsg');
+  const errEl = document.getElementById('settingsError');
+  if (msg) { msg.style.display = 'none'; }
+  if (errEl) { errEl.style.display = 'none'; }
+  try {
+    const r = await fetch(`${API_URL}/api/admin/settings/hero-stats`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify(body)
+    });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) {
+      if (errEl) { errEl.style.display = 'block'; errEl.textContent = j.error || `Failed (${r.status})`; }
+      return;
+    }
+    if (msg) { msg.style.display = 'block'; msg.textContent = `✅ Saved: ${(j.updated||[]).join(', ')}`; setTimeout(() => { if (msg) msg.style.display = 'none'; }, 3000); }
+    // Reload homepage live
+    loadAdminHeroOverrides();
+  } catch (e) {
+    if (errEl) { errEl.style.display = 'block'; errEl.textContent = 'Network error'; }
+  }
 }
 
 function closeSettingsModal() {
@@ -827,18 +936,41 @@ function updateKpis(auctions) {
 }
 
 function updateHeroStats(auctions) {
-  // Active Auctions — live count from API
+  // Active Auctions — live count from API (live data) or fallback to admin-set override
   const active = (auctions || []).filter(a => a.status === 'ACTIVE').length;
   const heroActive = document.getElementById('heroActive');
   if (heroActive) heroActive.textContent = active;
 
-  // Anonymity Rate — sealed-bid system: 100% by design
+  // Anonymity Rate — sealed-bid system: 100% by design (or admin override)
   const heroAnon = document.getElementById('heroAnonymity');
   if (heroAnon) heroAnon.textContent = '100%';
 
   // Auction Duration — system timer (48h sealed window)
   const heroDur = document.getElementById('heroDuration');
   if (heroDur) heroDur.textContent = '48h';
+
+  // Then overlay admin-edited values from /api/settings/hero-stats
+  loadAdminHeroOverrides();
+}
+
+async function loadAdminHeroOverrides() {
+  try {
+    const r = await fetch(`${API_URL}/api/settings/hero-stats`);
+    if (!r.ok) return;
+    const s = await r.json();
+    const map = {
+      hero_active_count: 'heroActive',
+      hero_anonymity_pct: 'heroAnonymity',
+      hero_duration_label: 'heroDuration',
+      hero_users_count: 'heroUsers'
+    };
+    for (const [k, id] of Object.entries(map)) {
+      const el = document.getElementById(id);
+      if (el && typeof s[k] === 'string' && s[k].length > 0) {
+        el.textContent = s[k];
+      }
+    }
+  } catch (e) { /* silent — keep live data */ }
 }
 
 function getTimeLeft(endsAt) {

@@ -3390,3 +3390,87 @@ body {
   .hero { padding: 28px 22px; }
   .hero-title { font-size: 26px; }
 }
+
+/* ============ Account Dropdown (header) ============ */
+.account-action { position: relative; }
+.account-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 220px;
+  background: #fff;
+  border: 1px solid #E5E7EB;
+  border-radius: 12px;
+  box-shadow: 0 12px 32px rgba(15,23,42,0.14), 0 4px 8px rgba(15,23,42,0.06);
+  padding: 6px;
+  z-index: 9999;
+  font-size: 14px;
+}
+.account-dropdown-header {
+  padding: 10px 12px 12px;
+  border-bottom: 1px solid #F1F5F9;
+  margin-bottom: 6px;
+}
+.account-dropdown-title {
+  font-weight: 600;
+  color: #0F172A;
+  font-size: 14px;
+}
+.account-dropdown-sub {
+  color: #64748B;
+  font-size: 12px;
+  margin-top: 2px;
+}
+.account-dropdown-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  padding: 9px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  color: #1E293B;
+  font-size: 14px;
+  transition: background 0.15s;
+  font-family: inherit;
+}
+.account-dropdown-item:hover { background: #F1F5F9; }
+.account-dropdown-divider {
+  height: 1px;
+  background: #F1F5F9;
+  margin: 6px 4px;
+}
+
+/* ============ Hero Stats Admin Edit Form ============ */
+.hero-stats-edit {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 8px;
+}
+.hero-stat-edit-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 13px;
+  color: #374151;
+}
+.hero-stat-edit-row span {
+  flex: 1;
+}
+.hero-stat-edit-row input {
+  flex: 0 0 140px;
+  padding: 8px 10px;
+  border: 1px solid #D1D5DB;
+  border-radius: 8px;
+  font-size: 13px;
+  font-family: inherit;
+  background: #fff;
+}
+.hero-stat-edit-row input:focus {
+  outline: none;
+  border-color: #3B82F6;
+  box-shadow: 0 0 0 3px rgba(59,130,246,0.12);
+}
