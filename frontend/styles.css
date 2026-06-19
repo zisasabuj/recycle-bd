@@ -2904,7 +2904,13 @@ body {
 }
 
 /* ---- SIDEBAR ---- */
-.sidebar { display: flex; flex-direction: column; gap: var(--space-4); position: sticky; top: 110px; align-self: start; max-height: calc(100vh - 130px); overflow-y: auto; padding-right: 4px; }
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  align-self: start;
+  min-width: 0;
+}
 .sidebar::-webkit-scrollbar { width: 6px; }
 .sidebar::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); border-radius: 3px; }
 
