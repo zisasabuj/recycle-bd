@@ -8,7 +8,7 @@ import { withCors, json, error } from '../_lib/middleware.js';
 export default withCors(async (req, res) => {
   if (req.method !== 'POST') return error(res, 405, 'POST only');
 
-  // Auth: require CRON_SECRET bearer
+  // Auth: require CRON_SECRET bearer (must match Vercel env)
   const auth = req.headers['authorization'] || '';
   const token = auth.replace(/^Bearer\s+/i, '');
   const expected = process.env.CRON_SECRET;
