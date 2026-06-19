@@ -28,11 +28,11 @@ const routes = [
   // Health
   { method: 'GET',  pattern: '/health',                                       file: '/health.js' },
 
-  // Auth
-  { method: 'POST', pattern: '/auth/register',                                file: '/auth/register.js' },
-  { method: 'POST', pattern: '/auth/login',                                   file: '/auth/login.js' },
-  { method: 'GET',  pattern: '/auth/me',                                      file: '/auth/me.js' },
-  { method: 'PATCH',pattern: '/auth/me',                                      file: '/auth/me.js' },
+  // Auth (renamed to avoid Vercel phantom cache on /api/auth/* from old build)
+  { method: 'POST', pattern: '/register',                                      file: '/auth/register.js' },
+  { method: 'POST', pattern: '/login',                                         file: '/auth/login.js' },
+  { method: 'GET',  pattern: '/me',                                            file: '/auth/me.js' },
+  { method: 'PATCH',pattern: '/me',                                            file: '/auth/me.js' },
   { method: 'GET',  pattern: '/auth/users',                                   file: '/auth/users/index.js' },
   { method: 'GET',  pattern: '/auth/users/:id/role',                          file: '/auth/users/[id]/role.js' },
   { method: 'PATCH',pattern: '/auth/users/:id/role',                          file: '/auth/users/[id]/role.js' },

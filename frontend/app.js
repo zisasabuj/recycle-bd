@@ -40,7 +40,7 @@ async function init() {
   await loadMeta();
   if (token) {
     try {
-      const res = await fetch(`${API_URL}/api/auth/me`, {
+      const res = await fetch(`${API_URL}/api/me`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) {
@@ -217,7 +217,7 @@ async function handleAuth(e) {
   try {
     let res, data;
     if (authMode === 'login') {
-      res = await fetch(`${API_URL}/api/auth/login`, {
+      res = await fetch(`${API_URL}/api/login`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ emailOrUsername: username, password })
       });
@@ -225,7 +225,7 @@ async function handleAuth(e) {
       const email = document.getElementById('authEmail').value;
       const fullName = document.getElementById('authFullName').value;
       const phone = document.getElementById('authPhone').value;
-      res = await fetch(`${API_URL}/api/auth/register`, {
+      res = await fetch(`${API_URL}/api/register`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, email, password, fullName, phone })
       });
@@ -615,7 +615,7 @@ async function saveProfile(e) {
   const phone = document.getElementById('pfPhone').value.trim();
 
   try {
-    const res = await fetch(`${API_URL}/api/auth/me`, {
+    const res = await fetch(`${API_URL}/api/me`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
