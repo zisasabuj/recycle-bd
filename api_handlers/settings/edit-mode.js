@@ -1,8 +1,8 @@
 // GET /api/settings/edit-mode — public, frontend reads to know what to allow
 // PUT /api/admin/settings/edit-mode — SUPER_ADMIN only, opens/closes auction edit
-import { prisma } from '../../../_lib/prisma.js';
-import { withCors, json, error } from '../../../_lib/middleware.js';
-import { getUserFromHeader } from '../../../_lib/auth.js';
+import { prisma } from '../../_lib/prisma.js';
+import { withCors, json, error } from '../../_lib/middleware.js';
+import { getUserFromHeader } from '../../_lib/auth.js';
 
 async function handleGet(req, res) {
   const s = await prisma.systemSetting.findUnique({ where: { key: 'edit_mode' } });

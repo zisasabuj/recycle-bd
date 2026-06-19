@@ -1,6 +1,6 @@
 // POST /api/upload/auction — upload images (to imgBB) + create auction in one shot
 import { prisma } from '../_lib/prisma.js';
-import { uploadBase64 } from '../_lib/imgbb.js';
+import { uploadToImgBB } from '../_lib/imgbb.js';
 import { withCors, withAuth, json, error } from '../_lib/middleware.js';
 import { BD_LOCATIONS, getThanas } from '../_lib/bdLocations.js';
 
