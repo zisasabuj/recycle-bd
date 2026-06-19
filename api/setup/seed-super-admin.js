@@ -5,39 +5,38 @@ import { prisma } from '../_lib/prisma.js';
 import { hashPassword } from '../_lib/auth.js';
 import { withCors, json, error } from '../_lib/middleware.js';
 
+async function readJsonBody(req) {
+  return new Promise((resolve) => {
+    let data = '';
+    req.on('data', (c) => (data += c));
+    req.on('end', () => {
+      try { resolve(JSON.parse(data || '{}')); }
+      catch { resolve({}); }
+    });
+  });
+}
+
 export default withCors(async (req, res) => {
   if (req.method !== 'POST') return error(res, 405, 'POST only');
 
-  // Auth: require CRON_SECRET bearer (must match Vercel env)
   const auth = req.headers['authorization'] || '';
   const token = auth.replace(/^Bearer\s+/i, '');
   const expected = process.env.CRON_SECRET;
   if (!expected) return error(res, 500, 'CRON_SECRET not configured on server');
   if (token !== expected) return error(res, 401, 'Bad token');
 
-  const body = req.body || {};
+  const body = await readJsonBody(req);
   const email = (body.email || 'admin@recycle.bd').toLowerCase().trim();
   const username = (body.username || 'admin').toLowerCase().trim();
   const password = body.password || 'Admin@2026';
   const fullName = body.fullName || 'Super Admin';
 
   try {
-    // Idempotent: upsert by email
     const passwordHash = await hashPassword(password);
     const user = await prisma.user.upsert({
       where: { email },
-      update: {
-        passwordHash,
-        role: 'SUPER_ADMIN',
-        fullName,
-      },
-      create: {
-        email,
-        username,
-        passwordHash,
-        fullName,
-        role: 'SUPER_ADMIN',
-      },
+      update: { passwordHash, role: 'SUPER_ADMIN', fullName },
+      create: { email, username, passwordHash, fullName, role: 'SUPER_ADMIN' },
     });
 
     return json(res, 200, {

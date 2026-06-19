@@ -18,7 +18,6 @@ import '../_lib/payment-helpers.js';
 // don't get auto-resolved).
 import '../api_handlers/setup/migrate.js';
 import '../api_handlers/setup/import-dump.js';
-import '../api_handlers/setup/seed-super-admin.js';
 import '../api_handlers/admin/reset-password.js';
 
 const HANDLERS_DIR = '../api_handlers';
@@ -99,7 +98,6 @@ const routes = [
   { method: 'GET',  pattern: '/setup/import-dump',                            file: '/setup/import-dump.js' },
   { method: 'POST', pattern: '/setup/migrate',                               file: '/setup/migrate.js' },
   { method: 'GET',  pattern: '/setup/migrate',                               file: '/setup/migrate.js' },
-  { method: 'POST', pattern: '/setup/seed-super-admin',                      file: '/setup/seed-super-admin.js' },
 
   // Cron (disabled on Hobby, but kept for compatibility)
   { method: 'GET',  pattern: '/cron/expire',                                  file: '/cron/expire.js' },
