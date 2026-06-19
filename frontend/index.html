@@ -172,10 +172,17 @@
               <h3 class="sb-title">Fill by price</h3>
               <div class="price-range">
                 <div class="price-row">
-                  <label>Min <input type="number" id="priceMin" placeholder="500" min="0"></label>
-                  <label>Max <input type="number" id="priceMax" placeholder="100000" min="0"></label>
+                  <div class="price-input">
+                    <span class="prefix">৳</span>
+                    <input type="text" inputmode="numeric" pattern="[0-9]*" id="priceMin" placeholder="500" maxlength="9" oninput="applyPriceFilter()">
+                  </div>
+                  <span class="price-dash">–</span>
+                  <div class="price-input">
+                    <span class="prefix">৳</span>
+                    <input type="text" inputmode="numeric" pattern="[0-9]*" id="priceMax" placeholder="100000" maxlength="9" oninput="applyPriceFilter()">
+                  </div>
                 </div>
-                <input type="range" id="priceRange" min="0" max="200000" step="500" value="200000" oninput="document.getElementById('priceMax').value=this.value">
+                <input type="range" id="priceRange" min="0" max="200000" step="500" value="200000" oninput="document.getElementById('priceMax').value=this.value; document.getElementById('priceMaxLabel').textContent='৳ '+Number(this.value).toLocaleString(); applyPriceFilter()">
                 <div class="price-bounds"><span>৳ 0</span><span id="priceMaxLabel">৳ 200,000</span></div>
               </div>
 
