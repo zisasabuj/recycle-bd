@@ -3694,6 +3694,63 @@ section.reveal.visible { transform: translateY(0); }
   .hero-stats { grid-template-columns: repeat(2, 1fr) !important; gap: 12px; }
 }
 
+/* ============================================================
+   Browse All Categories — mobile dropdown panel
+   On mobile (≤768px) the categories .sidebar is removed from in-flow layout
+   and shown as a fixed dropdown anchored under the main-nav, toggled by
+   .browse-open on <body>. Desktop is unaffected.
+   ============================================================ */
+@media (max-width: 768px) {
+  /* Hide the sidebar from in-flow on mobile — categories now live in the browse dropdown */
+  .body-grid > .sidebar { display: none !important; }
+  .body-grid > .main-col { flex: 0 0 auto !important; width: 100% !important; }
+
+  /* Filter-bar becomes visible right after the hero (was margin-top:auto, pushed to bottom of main-col) */
+  .main-col > .filter-bar { margin-top: 0 !important; order: -1; }
+
+  /* Backdrop */
+  body.browse-open::after {
+    content: '';
+    position: fixed; inset: 0;
+    background: rgba(15, 23, 42, 0.45);
+    z-index: 89;
+    animation: backdropFade 180ms ease-out;
+  }
+  @keyframes backdropFade { from { opacity: 0; } to { opacity: 1; } }
+
+  /* Dropdown panel — re-uses the existing .sidebar as the panel content */
+  body.browse-open > .main > .content > .view-active > .body-grid > .sidebar {
+    display: block !important;
+    position: fixed;
+    top: 132px;            /* below header (~64px) + main-nav (~68px) */
+    left: 12px;
+    right: 12px;
+    max-height: calc(100vh - 156px);
+    overflow-y: auto;
+    z-index: 95;
+    background: #fff;
+    border: 1px solid var(--glass-border, #E5E7EB);
+    border-radius: 14px;
+    box-shadow: 0 18px 40px rgba(15, 23, 42, 0.22), 0 4px 12px rgba(15, 23, 42, 0.08);
+    padding: 6px;
+    animation: browseDrop 200ms cubic-bezier(.2,.8,.2,1);
+  }
+  @keyframes browseDrop { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* Inside the dropdown: show the card header (collapsed by default is fine — body shows all items) */
+  body.browse-open .sb-card[data-collapsible="true"] > .sb-card-header { display: flex !important; }
+  body.browse-open .sb-card[data-collapsible="true"] > .sb-card-body { display: block !important; padding: 6px 4px; }
+
+  /* Active state on the toggle button when dropdown is open */
+  body.browse-open #browseBtn {
+    background: linear-gradient(135deg, #5b4dc7 0%, #7a6bff 100%);
+    box-shadow: 0 4px 14px rgba(107, 93, 211, 0.45);
+  }
+
+  /* Lock background scroll while dropdown is open */
+  body.browse-open { overflow: hidden; }
+}
+
 /* ===== Desktop (always visible, no toggle) ===== */
 .sb-card[data-collapsible="true"] > .sb-card-header { display: none; }
 .sb-card[data-collapsible="true"] > .sb-card-body { display: block !important; }

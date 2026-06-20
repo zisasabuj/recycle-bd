@@ -216,12 +216,41 @@ function closeMobileMenu() {
   btn.setAttribute('aria-expanded', 'false');
 }
 
+// ---- Browse All Categories dropdown (mobile) ----
+// On mobile the categories sidebar is hidden from in-flow; this toggles it as a
+// fixed dropdown panel anchored under the nav, with a backdrop to close on tap.
+function toggleBrowseCategories(e) {
+  if (e) { e.preventDefault(); e.stopPropagation(); }
+  const isOpen = document.body.classList.toggle('browse-open');
+  const btn = document.getElementById('browseBtn');
+  if (btn) btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+}
+
+function closeBrowseCategories() {
+  document.body.classList.remove('browse-open');
+  const btn = document.getElementById('browseBtn');
+  if (btn) btn.setAttribute('aria-expanded', 'false');
+}
+
+// Close Browse Categories when clicking outside (mobile dropdown)
+document.addEventListener('click', (e) => {
+  if (!document.body.classList.contains('browse-open')) return;
+  const sidebar = document.getElementById('catsidebar');
+  const btn = document.getElementById('browseBtn');
+  if (sidebar && sidebar.contains(e.target)) return; // click inside sidebar — keep open (will close on category pick)
+  if (btn && btn.contains(e.target)) return; // click on toggle button — toggleBrowseCategories handles this
+  closeBrowseCategories();
+}, true);
+
 // Close mobile menu on resize to desktop width
 let resizeTimer = null;
 window.addEventListener('resize', () => {
   clearTimeout(resizeTimer);
   resizeTimer = setTimeout(() => {
-    if (window.innerWidth > 900) closeMobileMenu();
+    if (window.innerWidth > 900) {
+      closeMobileMenu();
+      closeBrowseCategories();
+    }
   }, 150);
 });
 
@@ -2260,6 +2289,8 @@ function setCategoryFromSidebar(el, cat) {
   const matchingPill = document.querySelector(`.filter-pill[data-cat="${cat}"]`);
   if (matchingPill) matchingPill.classList.add('active');
   loadAuctions();
+  // On mobile, close the Browse All Categories dropdown after picking
+  closeBrowseCategories();
   // Scroll popular auctions section into view (just below hero)
   const target = document.getElementById('popularAuctions');
   if (target) {
