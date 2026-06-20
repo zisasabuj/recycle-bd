@@ -19,6 +19,7 @@ import '../_lib/payment-helpers.js';
 import '../api_handlers/setup/migrate.js';
 import '../api_handlers/setup/import-dump.js';
 import '../api_handlers/admin/reset-password.js';
+import '../api_handlers/admin/migrate-conditions.js';
 
 const HANDLERS_DIR = '../api_handlers';
 
@@ -92,6 +93,7 @@ const routes = [
   { method: 'PATCH',pattern: '/admin/settings/edit-mode',                     file: '/admin/settings/edit-mode.js' },
   { method: 'GET',  pattern: '/admin/settings/hero-stats',                    file: '/admin/settings/hero-stats.js' },
   { method: 'PUT',  pattern: '/admin/settings/hero-stats',                    file: '/admin/settings/hero-stats.js' },
+  { method: 'POST', pattern: '/admin/migrate-conditions',                     file: '/admin/migrate-conditions.js' },
 
   // Setup (one-time)
   { method: 'POST', pattern: '/setup/import-dump',                            file: '/setup/import-dump.js' },
