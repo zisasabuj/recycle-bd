@@ -3278,10 +3278,24 @@ body {
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   gap: var(--space-4);
 }
+.lot-grid.lot-grid-6 { grid-template-columns: repeat(6, minmax(0, 1fr)); }
 .lot-grid.lot-grid-5 { grid-template-columns: repeat(5, minmax(0, 1fr)); }
 .lot-grid.lot-grid-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .lot-grid.lot-grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .lot-card { min-width: 0; }
+
+/* ---- LOT IMAGE FIX: zoom-out look (no crop, full image visible) ---- */
+.lot-img {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  height: auto !important;
+  max-height: 220px;
+  object-fit: contain !important;
+  background: #f6f5fb;
+  padding: 8px;
+  display: block;
+}
+.lot-card .lot-img-area { height: auto !important; min-height: 0; }
 
 .lot-empty { grid-column: 1 / -1; padding: 40px; text-align: center; color: var(--text-muted); font-size: 14px; }
 
@@ -3533,6 +3547,7 @@ body {
   .sidebar { position: static; max-height: none; }
   .footer-inner { grid-template-columns: repeat(3, 1fr); }
   .cats-grid { grid-template-columns: repeat(4, 1fr); }
+  .lot-grid.lot-grid-6 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .lot-grid.lot-grid-5 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .four-col { grid-template-columns: repeat(2, 1fr); }
   .promo-banners { grid-template-columns: 1fr; }
