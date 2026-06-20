@@ -2480,16 +2480,26 @@ async function loadFourColSections() {
   try {
     // Real data-driven sorts (sortMap keys: top-selling, trending, newest, top-rated)
     const [topSelling, trending, recent, topRated] = await Promise.all([
-      fetch(`${API_URL}/api/auctions?sort=top-selling&limit=3`).then(r => r.json()).then(d => d.auctions || []),
-      fetch(`${API_URL}/api/auctions?sort=trending&limit=3`).then(r => r.json()).then(d => d.auctions || []),
-      fetch(`${API_URL}/api/auctions?sort=newest&limit=3`).then(r => r.json()).then(d => d.auctions || []),
-      fetch(`${API_URL}/api/auctions?sort=top-rated&limit=3`).then(r => r.json()).then(d => d.auctions || []),
+      fetch(`${API_URL}/api/auctions?sort=top-selling&limit=3`).then(r => r.json()).then(d => flattenAuctions(d.auctions || [])),
+      fetch(`${API_URL}/api/auctions?sort=trending&limit=3`).then(r => r.json()).then(d => flattenAuctions(d.auctions || [])),
+      fetch(`${API_URL}/api/auctions?sort=newest&limit=3`).then(r => r.json()).then(d => flattenAuctions(d.auctions || [])),
+      fetch(`${API_URL}/api/auctions?sort=top-rated&limit=3`).then(r => r.json()).then(d => flattenAuctions(d.auctions || [])),
     ]);
     renderFcList('fcTopSelling', topSelling);
     renderFcList('fcTrending', trending);
     renderFcList('fcRecent', recent);
     renderFcList('fcTopRated', topRated);
   } catch (e) { console.error('loadFourColSections', e); }
+}
+
+// Normalize API response: _count.bids → bidCount, ensure viewCount default
+function flattenAuctions(arr) {
+  return (arr || []).map(a => ({
+    ...a,
+    bidCount: a._count?.bids ?? a.bidCount ?? 0,
+    viewCount: a.viewCount ?? 0,
+    sellerRating: a.seller?.rating ?? 0
+  }));
 }
 
 function renderFcList(id, items) {
