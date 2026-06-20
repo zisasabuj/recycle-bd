@@ -19,7 +19,6 @@ import '../_lib/payment-helpers.js';
 import '../api_handlers/setup/migrate.js';
 import '../api_handlers/setup/import-dump.js';
 import '../api_handlers/admin/reset-password.js';
-import '../api_handlers/admin/migrate-conditions.js';
 
 const HANDLERS_DIR = '../api_handlers';
 
