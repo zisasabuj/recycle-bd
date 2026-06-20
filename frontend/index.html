@@ -536,7 +536,7 @@
       <p class="modal-sub">Welcome to Recycle — sealed-bid auctions in Bangladesh</p>
       <form id="authForm" onsubmit="handleAuth(event)">
         <label>Username<input type="text" id="authUsername" required></label>
-        <label id="emailLabel" style="display:none">Email<input type="email" id="authEmail"></label>
+        <label id="emailLabel" style="display:none">Email (required)<input type="email" id="authEmail" required></label>
         <label class="password-wrap">Password
           <div class="password-field">
             <input type="password" id="authPassword" required>
@@ -544,7 +544,7 @@
           </div>
         </label>
         <label id="fullNameLabel" style="display:none">Full Name (optional)<input type="text" id="authFullName"></label>
-        <label id="phoneLabel" style="display:none">Phone (optional)<input type="text" id="authPhone"></label>
+        <label id="phoneLabel" style="display:none">Phone (required)<input type="tel" id="authPhone" required></label>
         <button type="submit" class="btn-primary" id="authSubmit">Login</button>
         <p id="authSwitch" class="link" onclick="toggleAuthMode()">Don't have an account? Register</p>
         <p id="authError" class="error"></p>
@@ -708,6 +708,6 @@
   <button class="icon-btn" id="settingsBtn" onclick="openSettingsModal()" style="display:none" title="Settings (Admin only)">⚙️</button>
   <span class="notif-dot" id="notifDot" style="display:none"></span>
 
-  <script src="app.js?v=50"></script>
+  <script src="app.js?v=51"></script>
 </body>
 </html>

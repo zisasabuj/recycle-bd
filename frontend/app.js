@@ -261,9 +261,14 @@ async function handleAuth(e) {
         body: JSON.stringify({ emailOrUsername: username, password })
       });
     } else {
-      const email = document.getElementById('authEmail').value;
-      const fullName = document.getElementById('authFullName').value;
-      const phone = document.getElementById('authPhone').value;
+      const email = document.getElementById('authEmail').value.trim();
+      const fullName = document.getElementById('authFullName').value.trim();
+      const phone = document.getElementById('authPhone').value.trim();
+      // Mandatory validation: email + phone required
+      if (!email) throw new Error('Email address is required');
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new Error('Please enter a valid email address');
+      if (!phone) throw new Error('Phone number is required');
+      if (!/^[+\d][\d\s\-()]{6,}$/.test(phone)) throw new Error('Please enter a valid phone number');
       res = await fetch(`${API_URL}/api/register`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, email, password, fullName, phone })
@@ -975,10 +980,17 @@ function updateKpis(auctions) {
 }
 
 function updateHeroStats(auctions) {
-  // Active Auctions — live count from API (live data) or fallback to admin-set override
-  const active = (auctions || []).filter(a => a.status === 'ACTIVE').length;
+  // Active Auctions — show TOTAL active count across platform, not just loaded list.
+  // Pass through any cached count; if not yet fetched, kick a background fetch.
   const heroActive = document.getElementById('heroActive');
-  if (heroActive) heroActive.textContent = active;
+  if (heroActive && typeof window.__totalActiveCount === 'number') {
+    heroActive.textContent = window.__totalActiveCount;
+  } else if (heroActive) {
+    // Fallback to loaded list count if global count not yet available
+    heroActive.textContent = (auctions || []).filter(a => a.status === 'ACTIVE').length;
+  }
+  // Kick global count fetch (non-blocking)
+  fetchGlobalActiveCount();
 
   // Anonymity Rate — sealed-bid system: 100% by design (or admin override)
   const heroAnon = document.getElementById('heroAnonymity');
@@ -990,6 +1002,19 @@ function updateHeroStats(auctions) {
 
   // Then overlay admin-edited values from /api/settings/hero-stats
   loadAdminHeroOverrides();
+}
+
+async function fetchGlobalActiveCount() {
+  try {
+    // Pull a large page to derive count; simple + works without new endpoint
+    const r = await fetch(`${API_URL}/api/auctions?limit=200&status=ACTIVE`);
+    if (!r.ok) return;
+    const data = await r.json();
+    const total = (data.auctions || []).filter(a => a.status === 'ACTIVE').length;
+    window.__totalActiveCount = total;
+    const heroActive = document.getElementById('heroActive');
+    if (heroActive) heroActive.textContent = total;
+  } catch (e) { /* silent */ }
 }
 
 async function loadAdminHeroOverrides() {
