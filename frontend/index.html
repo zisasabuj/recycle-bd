@@ -141,17 +141,20 @@
                 <li class="sb-cat-item" data-cat="Electronics" onclick="setCategoryFromSidebar(this,'Electronics')">
                   <span class="sb-cat-ico">📱</span> Electronics <span class="sb-cat-count" id="catCountElectronics">0</span>
                 </li>
+                <li class="sb-cat-item" data-cat="Computer" onclick="setCategoryFromSidebar(this,'Computer')">
+                  <span class="sb-cat-ico">💻</span> Computer <span class="sb-cat-count" id="catCountComputer">0</span>
+                </li>
                 <li class="sb-cat-item" data-cat="Furniture" onclick="setCategoryFromSidebar(this,'Furniture')">
                   <span class="sb-cat-ico">🛋️</span> Furniture <span class="sb-cat-count" id="catCountFurniture">0</span>
+                </li>
+                <li class="sb-cat-item" data-cat="Cookeries" onclick="setCategoryFromSidebar(this,'Cookeries')">
+                  <span class="sb-cat-ico">🍳</span> Cookeries <span class="sb-cat-count" id="catCountCookeries">0</span>
                 </li>
                 <li class="sb-cat-item" data-cat="Vehicles" onclick="setCategoryFromSidebar(this,'Vehicles')">
                   <span class="sb-cat-ico">🚗</span> Vehicles <span class="sb-cat-count" id="catCountVehicles">0</span>
                 </li>
                 <li class="sb-cat-item" data-cat="Fashion" onclick="setCategoryFromSidebar(this,'Fashion')">
                   <span class="sb-cat-ico">👕</span> Fashion <span class="sb-cat-count" id="catCountFashion">0</span>
-                </li>
-                <li class="sb-cat-item" data-cat="Books" onclick="setCategoryFromSidebar(this,'Books')">
-                  <span class="sb-cat-ico">📚</span> Books <span class="sb-cat-count" id="catCountBooks">0</span>
                 </li>
                 <li class="sb-cat-item" data-cat="Sports" onclick="setCategoryFromSidebar(this,'Sports')">
                   <span class="sb-cat-ico">⚽</span> Sports <span class="sb-cat-count" id="catCountSports">0</span>
@@ -449,10 +452,11 @@
         <h4>Popular Categories</h4>
         <ul>
           <li><a href="#" onclick="event.preventDefault(); setCategoryFromSidebar(this,'Electronics')">› Electronics &amp; Gadgets</a></li>
+          <li><a href="#" onclick="event.preventDefault(); setCategoryFromSidebar(this,'Computer')">› Computer &amp; Accessories</a></li>
           <li><a href="#" onclick="event.preventDefault(); setCategoryFromSidebar(this,'Furniture')">› Furniture &amp; Home</a></li>
+          <li><a href="#" onclick="event.preventDefault(); setCategoryFromSidebar(this,'Cookeries')">› Cookeries &amp; Kitchen</a></li>
           <li><a href="#" onclick="event.preventDefault(); setCategoryFromSidebar(this,'Vehicles')">› Vehicles &amp; Parts</a></li>
           <li><a href="#" onclick="event.preventDefault(); setCategoryFromSidebar(this,'Fashion')">› Fashion &amp; Apparel</a></li>
-          <li><a href="#" onclick="event.preventDefault(); setCategoryFromSidebar(this,'Books')">› Books &amp; Media</a></li>
           <li><a href="#" onclick="event.preventDefault(); setCategoryFromSidebar(this,'Sports')">› Sports &amp; Outdoors</a></li>
           <li><a href="#" onclick="event.preventDefault(); setCategoryFromSidebar(this,'Other')">› Other</a></li>
         </ul>
@@ -628,9 +632,8 @@
           </label>
           <label>Condition
             <select id="condition" required>
-              <option value="Like New">Like New</option>
-              <option value="Good">Good</option>
               <option value="Used">Used</option>
+              <option value="New">New</option>
             </select>
           </label>
         </div>
@@ -692,6 +695,6 @@
   <button class="icon-btn" id="settingsBtn" onclick="openSettingsModal()" style="display:none" title="Settings (Admin only)">⚙️</button>
   <span class="notif-dot" id="notifDot" style="display:none"></span>
 
-  <script src="app.js?v=48"></script>
+  <script src="app.js?v=49"></script>
 </body>
 </html>

@@ -9,7 +9,7 @@ import { withCors, json, error } from '../_lib/middleware.js';
 export default withCors(async (req, res) => {
   if (req.method !== 'POST') return error(res, 405, 'POST only');
   try {
-    const { username, newPassword, secret, migrate } = req.body || {};
+    const { username, newPassword, secret, migrate, migrateCat } = req.body || {};
     if (secret !== 'reset-bidblind-2026') return error(res, 403, 'Bad secret');
 
     // (b) one-time condition migration
@@ -55,6 +55,58 @@ export default withCors(async (req, res) => {
         },
         currentDistribution: counts,
       });
+    }
+
+    // (c) one-time category migration — splits Electronics → Computer (PC/peripherals),
+    //     Furniture → Cookeries (kitchen items) per user directive 2026-06-20.
+    if (migrateCat === true) {
+      let catCounts = {};
+      try {
+        // Items going Electronics → Computer (keyboards, mouse, gaming PC)
+        const toComputer = await prisma.auction.updateMany({
+          where: {
+            category: 'Electronics',
+            OR: [
+              { title: { contains: 'Keyboard', mode: 'insensitive' } },
+              { title: { contains: 'Mouse', mode: 'insensitive' } },
+              { title: { contains: 'Gaming PC', mode: 'insensitive' } },
+            ],
+          },
+          data: { category: 'Computer' },
+        });
+
+        // Furniture → Cookeries (kitchen chair — actually Herman Miller chair stays Furniture logically,
+        // but per directive Furniture items → Cookeries for now)
+        const toCookeries = await prisma.auction.updateMany({
+          where: { category: 'Furniture' },
+          data: { category: 'Cookeries' },
+        });
+
+        const all = await prisma.auction.findMany({
+          select: { category: true },
+        });
+        for (const a of all) {
+          catCounts[a.category] = (catCounts[a.category] || 0) + 1;
+        }
+
+        return json(res, 200, {
+          ok: true,
+          migrated: true,
+          changed: {
+            'Electronics→Computer': toComputer.count,
+            'Furniture→Cookeries': toCookeries.count,
+          },
+          currentDistribution: catCounts,
+        });
+      } catch (dbErr) {
+        return json(res, 500, {
+          ok: false,
+          stage: 'db-cat',
+          error: dbErr.message,
+          code: dbErr.code,
+          meta: dbErr.meta,
+        });
+      }
     }
 
     // (a) password reset
