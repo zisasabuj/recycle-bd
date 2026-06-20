@@ -14,30 +14,44 @@ export default withCors(async (req, res) => {
 
     // (b) one-time condition migration
     if (migrate === true) {
-      const likeNew = await prisma.auction.updateMany({
-        where: { condition: 'Like New' },
-        data: { condition: 'New' },
-      });
-      const good = await prisma.auction.updateMany({
-        where: { condition: 'Good' },
-        data: { condition: 'Used' },
-      });
+      let likeNewCount = 0;
+      let goodCount = 0;
+      let counts = {};
+      try {
+        const likeNew = await prisma.auction.updateMany({
+          where: { condition: 'Like New' },
+          data: { condition: 'New' },
+        });
+        likeNewCount = likeNew.count;
 
-      // Count remaining distinct values
-      const all = await prisma.auction.findMany({
-        select: { condition: true },
-      });
-      const counts = {};
-      for (const a of all) {
-        counts[a.condition] = (counts[a.condition] || 0) + 1;
+        const good = await prisma.auction.updateMany({
+          where: { condition: 'Good' },
+          data: { condition: 'Used' },
+        });
+        goodCount = good.count;
+
+        const all = await prisma.auction.findMany({
+          select: { condition: true },
+        });
+        for (const a of all) {
+          counts[a.condition] = (counts[a.condition] || 0) + 1;
+        }
+      } catch (dbErr) {
+        return json(res, 500, {
+          ok: false,
+          stage: 'db',
+          error: dbErr.message,
+          code: dbErr.code,
+          meta: dbErr.meta,
+        });
       }
 
       return json(res, 200, {
         ok: true,
         migrated: true,
         changed: {
-          'Like New → New': likeNew.count,
-          'Good → Used': good.count,
+          'Like New → New': likeNewCount,
+          'Good → Used': goodCount,
         },
         currentDistribution: counts,
       });
@@ -53,7 +67,11 @@ export default withCors(async (req, res) => {
     });
     return json(res, 200, { ok: true, user });
   } catch (err) {
-    console.error('[reset-password / migrate]', err);
-    return error(res, 500, 'Reset/migrate failed: ' + (err.message || 'unknown'));
+    return json(res, 500, {
+      ok: false,
+      stage: 'outer',
+      error: err.message,
+      code: err.code,
+    });
   }
 });
