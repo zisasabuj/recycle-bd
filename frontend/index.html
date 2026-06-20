@@ -205,6 +205,9 @@
                 </div>
                 <span class="hero-deco hero-deco-1">💻</span>
                 <span class="hero-deco hero-deco-2">🪑</span>
+                <span class="hero-deco hero-deco-3">⌚</span>
+                <span class="hero-deco hero-deco-4">📱</span>
+                <span class="hero-deco hero-deco-5">🎧</span>
               </div>
 
               <!-- Ending Soon — INSIDE the hero card, right-aligned (same peach background) -->
@@ -261,9 +264,9 @@
         </div>
 
         <!-- Live Auctions grid (10 = 2 rows × 5) -->
-            <section class="lot-section">
-              <div class="lot-header">
-                <h2>🔥 Popular Auctions <span class="count" id="lotCount">(Loading…)</span></h2>
+            <section class="lot-section" id="popularAuctions">
+              <div class="section-head">
+                <h2 class="section-title">🔥 Popular Auctions <span class="count" id="lotCount">(Loading…)</span></h2>
                 <a class="lot-viewall" href="#" onclick="event.preventDefault();">View All →</a>
               </div>
               <div id="auctionsList" class="lot-grid lot-grid-6">
@@ -383,6 +386,16 @@
         </div>
         <div id="dashboardContent">
           <div class="lot-empty">Loading dashboard…</div>
+        </div>
+      </section>
+
+      <section id="sellersSection" class="view">
+        <div class="view-header">
+          <h1>🛍️ Top Sellers</h1>
+          <p class="view-sub">Active sellers on the platform</p>
+        </div>
+        <div id="sellersContent">
+          <div class="lot-empty">Loading sellers…</div>
         </div>
       </section>
 

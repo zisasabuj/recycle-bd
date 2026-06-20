@@ -59,6 +59,9 @@ async function handleList(req, res) {
       newest: { createdAt: 'desc' },
       'price-asc': { basePrice: 'asc' },
       'price-desc': { basePrice: 'desc' },
+      'top-selling': { bids: { _count: 'desc' } },
+      'trending':    { viewCount: 'desc' },
+      'top-rated':   { seller: { rating: 'desc' } },
     };
     const orderBy = sortMap[String(sort)] || { endsAt: 'asc' };
 

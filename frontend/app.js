@@ -2181,8 +2181,13 @@ function setCategoryFromSidebar(el, cat) {
   const matchingPill = document.querySelector(`.filter-pill[data-cat="${cat}"]`);
   if (matchingPill) matchingPill.classList.add('active');
   loadAuctions();
-  // Scroll main grid into view on mobile
-  if (window.innerWidth < 1024) {
+  // Scroll popular auctions section into view (just below hero)
+  const target = document.getElementById('popularAuctions');
+  if (target) {
+    const rect = target.getBoundingClientRect();
+    const headerOffset = 80; // approx sticky header height
+    window.scrollTo({ top: window.scrollY + rect.top - headerOffset, behavior: 'smooth' });
+  } else {
     document.getElementById('auctionsList')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 }
