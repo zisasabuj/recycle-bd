@@ -107,7 +107,7 @@ router.post('/', authMiddleware, async (req, res) => {
 //   endingIn=2 → only auctions ending within 2 hours (🔥 Ending Soon section)
 router.get('/', async (req, res) => {
   try {
-    const { city, area, district, thana, category, status = 'ACTIVE', search, sort, page = 1, limit = 20, endingIn } = req.query;
+    const { city, area, district, thana, category, condition, status = 'ACTIVE', search, sort, page = 1, limit = 20, endingIn } = req.query;
     const skip = (Number(page) - 1) * Number(limit);
 
     const where = {
@@ -117,6 +117,7 @@ router.get('/', async (req, res) => {
       ...(district && { district: String(district) }),
       ...(thana && { thana: String(thana) }),
       ...(category && { category: String(category) }),
+      ...(condition && { condition: String(condition) }),
       ...(endingIn && {
         endsAt: { lte: new Date(Date.now() + Number(endingIn) * 3600 * 1000), gt: new Date() }
       }),

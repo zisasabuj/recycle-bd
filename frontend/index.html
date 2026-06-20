@@ -227,6 +227,11 @@
                 </select>
               </div>
               <div class="filter-mid">
+                <select id="filterCondition" onchange="loadAuctions()" aria-label="Condition">
+                  <option value="">All Conditions</option>
+                  <option value="Used">Used</option>
+                  <option value="New">New</option>
+                </select>
                 <select id="filterDistrict" onchange="updateThanaFilter(); loadAuctions();" aria-label="District">
                   <option value="">All Districts</option>
                 </select>
@@ -687,6 +692,6 @@
   <button class="icon-btn" id="settingsBtn" onclick="openSettingsModal()" style="display:none" title="Settings (Admin only)">⚙️</button>
   <span class="notif-dot" id="notifDot" style="display:none"></span>
 
-  <script src="app.js?v=47"></script>
+  <script src="app.js?v=48"></script>
 </body>
 </html>
