@@ -3755,7 +3755,7 @@ section.reveal.visible { transform: translateY(0); }
     content: '';
     position: fixed; inset: 0;
     background: rgba(15, 23, 42, 0.45);
-    z-index: 89;
+    z-index: 0;            /* below .main (z:1) so panel (inside .main) is clickable */
     animation: backdropFade 180ms ease-out;
   }
   @keyframes backdropFade { from { opacity: 0; } to { opacity: 1; } }
@@ -3798,7 +3798,7 @@ section.reveal.visible { transform: translateY(0); }
     content: '';
     position: fixed; inset: 0;
     background: rgba(15, 23, 42, 0.45);
-    z-index: 89;
+    z-index: 0;            /* below .main (z:1) so panel (inside .main) is clickable */
     animation: backdropFade 180ms ease-out;
   }
 
