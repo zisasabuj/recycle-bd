@@ -21,9 +21,9 @@ async function expireStaleAuctions() {
   try {
     const result = await prisma.auction.updateMany({
       where: { status: 'ACTIVE', endsAt: { lt: new Date() } },
-      data: { status: 'ENDED' },
+      data: { status: 'EXPIRED' },
     });
-    if (result.count > 0) console.log(`[expire] marked ${result.count} auctions ENDED`);
+    if (result.count > 0) console.log(`[expire] marked ${result.count} auctions EXPIRED`);
   } catch (e) {
     console.error('[expire] failed:', e.message);
   }
