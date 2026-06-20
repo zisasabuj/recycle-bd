@@ -233,14 +233,16 @@ function closeBrowseCategories() {
 }
 
 // Close Browse Categories when clicking outside (mobile dropdown)
+// Uses BUBBLE phase so that stopPropagation on nested elements doesn't pre-empt it,
+// and so that the <select> native picker can fire its own events without interference.
 document.addEventListener('click', (e) => {
   if (!document.body.classList.contains('browse-open')) return;
   const sidebar = document.getElementById('catsidebar');
   const btn = document.getElementById('browseBtn');
-  if (sidebar && sidebar.contains(e.target)) return; // click inside sidebar — keep open (will close on category pick)
+  if (sidebar && sidebar.contains(e.target)) return; // click inside sidebar — keep open
   if (btn && btn.contains(e.target)) return; // click on toggle button — toggleBrowseCategories handles this
   closeBrowseCategories();
-}, true);
+});
 
 // ---- Filter dropdown (mobile) ----
 // On mobile the filter-bar is hidden from in-flow; this toggles it as a
@@ -263,14 +265,19 @@ function closeFilterBar() {
 }
 
 // Close Filter dropdown when clicking outside (mobile dropdown)
+// Bubble phase + form-element exception so <select> can open its native picker.
 document.addEventListener('click', (e) => {
   if (!document.body.classList.contains('filter-open')) return;
   const filterBar = document.querySelector('.main-col > .filter-bar');
   const btn = document.getElementById('filterToggleBtn');
   if (filterBar && filterBar.contains(e.target)) return; // click inside filter — keep open
   if (btn && btn.contains(e.target)) return; // click on toggle button — toggleFilterBar handles this
+  // If user is interacting with a form element that triggered a synthetic click
+  // (e.g. <label> wrapping a <select>), don't close
+  const tag = (e.target && e.target.tagName) || '';
+  if (['SELECT', 'OPTION', 'INPUT', 'LABEL', 'BUTTON', 'TEXTAREA'].includes(tag)) return;
   closeFilterBar();
-}, true);
+});
 
 // Close mobile menu on resize to desktop width
 let resizeTimer = null;
