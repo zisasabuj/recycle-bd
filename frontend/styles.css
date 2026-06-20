@@ -200,6 +200,35 @@ body::before {
   transition: all 0.2s;
 }
 .icon-btn:hover { background: var(--glass-bg-strong); }
+
+/* Settings + notif bits live at end of <body> in normal flow;
+   pin them into the topbar top-right so they never appear in the footer. */
+#settingsBtn {
+  position: fixed;
+  top: 18px;
+  right: 132px;            /* sits just left of the avatar/topbar-user cluster */
+  z-index: 110;
+  display: none;           /* toggled to inline-flex by JS for admin only */
+  align-items: center;
+  justify-content: center;
+}
+#notifDot {
+  position: fixed;
+  top: 24px;
+  right: 178px;            /* little red badge next to settings btn */
+  z-index: 111;
+  display: none;
+}
+/* Tighten on tablet */
+@media (max-width: 900px) {
+  #settingsBtn { top: 12px; right: 80px; }
+  #notifDot   { top: 18px; right: 124px; }
+}
+/* Tighter on mobile */
+@media (max-width: 600px) {
+  #settingsBtn { top: 10px; right: 56px; width: 32px; height: 32px; font-size: 14px; }
+  #notifDot   { top: 16px; right: 94px; }
+}
 .notif-dot {
   position: absolute;
   top: 6px; right: 6px;
