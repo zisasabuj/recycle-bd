@@ -275,7 +275,7 @@ body::before {
   grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
   gap: var(--space-7);
   align-items: stretch;
-  margin-bottom: var(--space-6);
+  margin-bottom: 10px;
 }
 @media (max-width: 960px) {
   .hero.hero-unified { grid-template-columns: 1fr; gap: var(--space-5); }
@@ -3005,6 +3005,13 @@ body {
   min-width: 0;
   align-items: stretch;
 }
+.main-col {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  align-self: stretch;
+}
+.main-col > .filter-bar { margin-top: auto; }
 
 /* ---- SIDEBAR ---- */
 .sidebar {
