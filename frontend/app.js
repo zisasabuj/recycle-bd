@@ -879,6 +879,11 @@ function switchView(view) {
     loadDashboardView();
     return;
   }
+  if (view === 'sellers') {
+    document.getElementById('sellersSection').style.display = 'block';
+    loadSellersView();
+    return;
+  }
   // Fallback: show browse
   document.getElementById('browseSection').style.display = 'block';
   loadAuctions();
@@ -1950,6 +1955,55 @@ async function loadDashboardView() {
   }
 }
 
+// ---- Sellers view ----
+async function loadSellersView() {
+  const root = document.getElementById('sellersContent');
+  if (!root) return;
+  root.innerHTML = '<div class="lot-empty">Loading sellers…</div>';
+  try {
+    // Pull all active auctions; aggregate per seller
+    const r = await fetch(`${API_URL}/api/auctions?limit=100&status=ACTIVE`);
+    if (!r.ok) throw new Error('fetch failed');
+    const data = await r.json();
+    const list = data.auctions || [];
+    const bySeller = {};
+    list.forEach(a => {
+      const s = a.seller || {};
+      const key = s.id || a.sellerId;
+      if (!bySeller[key]) bySeller[key] = {
+        username: s.username || 'seller',
+        rating: s.rating || 0,
+        auctions: 0, totalBids: 0
+      };
+      bySeller[key].auctions += 1;
+      bySeller[key].totalBids += (a._count && a._count.bids) || 0;
+    });
+    const sellers = Object.values(bySeller)
+      .sort((a, b) => (b.auctions - a.auctions) || (b.totalBids - a.totalBids))
+      .slice(0, 24);
+    if (!sellers.length) {
+      root.innerHTML = '<div class="lot-empty">No active sellers yet.</div>';
+      return;
+    }
+    root.innerHTML = `
+      <div class="sellers-grid">
+        ${sellers.map((s, i) => `
+          <div class="seller-card">
+            <div class="seller-avatar">${escapeHtml(s.username.charAt(0).toUpperCase())}</div>
+            <div class="seller-info">
+              <div class="seller-name">${escapeHtml(s.username)}</div>
+              <div class="seller-meta">⭐ ${Number(s.rating).toFixed(1)} · ${s.auctions} active · ${s.totalBids} bids</div>
+            </div>
+            <div class="seller-rank">#${i + 1}</div>
+          </div>
+        `).join('')}
+      </div>`;
+  } catch (e) {
+    console.error('loadSellersView', e);
+    root.innerHTML = '<div class="lot-empty">Failed to load sellers.</div>';
+  }
+}
+
 // ---- Chat panel ----
 async function loadChatList() {
   const listEl = document.getElementById('chatList');
@@ -2399,12 +2453,12 @@ function stopDealCountdowns() {
 /* ---------- 4-column: Top Selling / Trending / Recently Added / Top Rated ---------- */
 async function loadFourColSections() {
   try {
-    // Top Selling: sort by bid count desc
+    // Real data-driven sorts (sortMap keys: top-selling, trending, newest, top-rated)
     const [topSelling, trending, recent, topRated] = await Promise.all([
-      fetch(`${API_URL}/api/auctions?sort=newest&limit=12`).then(r => r.json()).then(d => (d.auctions||[]).slice(0,3)), // proxy: newest
-      fetch(`${API_URL}/api/auctions?sort=ending&limit=12`).then(r => r.json()).then(d => (d.auctions||[]).slice(3,6)),  // proxy: mid-window
-      fetch(`${API_URL}/api/auctions?sort=newest&limit=6`).then(r => r.json()).then(d => (d.auctions||[]).slice(0,3)),
-      fetch(`${API_URL}/api/auctions?sort=ending&limit=12`).then(r => r.json()).then(d => (d.auctions||[]).slice(6,9)),
+      fetch(`${API_URL}/api/auctions?sort=top-selling&limit=3`).then(r => r.json()).then(d => d.auctions || []),
+      fetch(`${API_URL}/api/auctions?sort=trending&limit=3`).then(r => r.json()).then(d => d.auctions || []),
+      fetch(`${API_URL}/api/auctions?sort=newest&limit=3`).then(r => r.json()).then(d => d.auctions || []),
+      fetch(`${API_URL}/api/auctions?sort=top-rated&limit=3`).then(r => r.json()).then(d => d.auctions || []),
     ]);
     renderFcList('fcTopSelling', topSelling);
     renderFcList('fcTrending', trending);
@@ -2446,16 +2500,15 @@ function updateSidebarCategoryCounts() {
   allAuctions.forEach(a => { counts[a.category] = (counts[a.category] || 0) + 1; });
   const all = document.getElementById('catCountAll');
   if (all) all.textContent = allAuctions.length;
-  ['Electronics','Furniture','Vehicles','Fashion','Books','Sports','Other'].forEach(cat => {
+  ['Electronics','Computer','Cookeries','Furniture','Vehicles','Fashion','Sports','Other'].forEach(cat => {
     const el = document.getElementById('catCount' + cat);
     if (el) el.textContent = counts[cat] || 0;
   });
   // Condition counts
   const condCounts = {};
   allAuctions.forEach(a => { condCounts[a.condition] = (condCounts[a.condition] || 0) + 1; });
-  const lk = document.getElementById('condLikeNew'); if (lk) lk.textContent = condCounts['Like New'] || 0;
-  const gd = document.getElementById('condGood'); if (gd) gd.textContent = condCounts['Good'] || 0;
   const us = document.getElementById('condUsed'); if (us) us.textContent = condCounts['Used'] || 0;
+  const nw = document.getElementById('condNew');  if (nw) nw.textContent = condCounts['New'] || 0;
 }
 
 /* ---------- Tweak renderAuctions to also call new helpers ---------- */

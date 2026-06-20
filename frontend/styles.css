@@ -3725,3 +3725,39 @@ body {
   border-color: #3B82F6;
   box-shadow: 0 0 0 3px rgba(59,130,246,0.12);
 }
+
+/* ============================================================
+   SELLERS VIEW
+   ============================================================ */
+.sellers-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: var(--space-3);
+}
+.seller-card {
+  display: flex; align-items: center; gap: 12px;
+  background: var(--glass-bg-soft);
+  border: 1px solid var(--glass-border-soft);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  transition: transform .15s ease, box-shadow .15s ease;
+}
+.seller-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.06); }
+.seller-avatar {
+  width: 44px; height: 44px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--color-purple) 0%, #8B7BFF 100%);
+  color: #fff; font-weight: 800; font-size: 18px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.seller-info { flex: 1; min-width: 0; }
+.seller-name { font-weight: 700; font-size: 14px; color: var(--text-primary); }
+.seller-meta { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+.seller-rank {
+  font-size: 12px; font-weight: 800; color: var(--color-purple);
+  background: var(--color-purple-bg);
+  padding: 4px 8px; border-radius: var(--radius-pill);
+}
+@media (max-width: 600px) {
+  .sellers-grid { grid-template-columns: 1fr; }
+}
