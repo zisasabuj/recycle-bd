@@ -2605,7 +2605,11 @@ function applyTextReveal() {
 // ============================================================
 let __scrollObserver = null;
 function applyScrollReveal() {
-  if (!('IntersectionObserver' in window)) return;
+  if (!('IntersectionObserver' in window)) {
+    // Fallback: just reveal everything
+    document.querySelectorAll('.reveal, .lot-card, .seller-card, .four-col-card, .deals-card, section').forEach(el => el.classList.add('visible'));
+    return;
+  }
   if (!__scrollObserver) {
     __scrollObserver = new IntersectionObserver((entries) => {
       entries.forEach(e => {
@@ -2614,13 +2618,30 @@ function applyScrollReveal() {
           __scrollObserver.unobserve(e.target);
         }
       });
-    }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+    }, { threshold: 0.08, rootMargin: '0px 0px -20px 0px' });
   }
-  const sel = '.lot-card, .seller-card, .lot-section, .four-col-card, .deals-card';
+  // Broad selector list — covers hero, sections, cards, sidebar, modal panels, view containers, footer
+  const sel = [
+    '.lot-card', '.seller-card', '.four-col-card', '.deals-card',
+    'section', 'aside', 'footer',
+    '.sidebar', '.catsidebar', '.filter-bar',
+    '.lot-section', '.view-section',
+    '.modal-content', '.toast'
+  ].join(', ');
   document.querySelectorAll(sel).forEach(el => {
-    if (el.classList.contains('reveal')) return;
+    if (el.classList.contains('reveal-applied')) return;
+    el.classList.add('reveal-applied');
+    if (el.classList.contains('reveal')) return;       // already has it
     el.classList.add('reveal');
-    __scrollObserver.observe(el);
+    // Already on-screen at load? Reveal immediately.
+    const r = el.getBoundingClientRect();
+    if (r.top < window.innerHeight && r.bottom > 0) {
+      // Already visible — add .visible after a microtask so the transition plays
+      setTimeout(() => el.classList.add('visible'), 50);
+      __scrollObserver.unobserve(el);
+    } else {
+      __scrollObserver.observe(el);
+    }
   });
 }
 

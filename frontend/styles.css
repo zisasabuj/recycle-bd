@@ -3208,41 +3208,57 @@ body {
 .hero-stat-num.blue { color: var(--color-blue); }
 .hero-stat-label { font-size: 11px; color: var(--text-secondary); font-weight: 600; margin: 0; text-transform: uppercase; letter-spacing: 0.04em; }
 
+/* Hero decoration icons — small, low-opacity, parked in true corners.
+   Never overlap headline, newsletter, stats cards, or Ending Soon panel. */
 .hero-deco {
-  position: absolute; font-size: 48px; opacity: 0.45;
-  pointer-events: none; user-select: none;
-  filter: drop-shadow(0 4px 8px rgba(0,0,0,0.08));
-  animation: heroFloat 6s ease-in-out infinite;
+  position: absolute;
+  font-size: 30px;
+  opacity: 0.22;
+  pointer-events: none;
+  user-select: none;
+  z-index: 1;             /* behind .hero-inner (z:2) and ending-soon panel */
+  filter: drop-shadow(0 3px 6px rgba(0,0,0,0.06));
 }
-.hero-deco-1 { top: 14%; right: 8%;  transform: rotate(-12deg); animation-delay: 0s;   }
-.hero-deco-2 { bottom: 8%; left: 4%;  transform: rotate(8deg);  animation-delay: 1s;   }   /* chair moved away from Happy Users */
-.hero-deco-3 { top: 24%; right: 22%; transform: rotate(15deg);  font-size: 36px; opacity: 0.38; animation-delay: 2s;   }
-.hero-deco-4 { bottom: 14%; left: 18%; transform: rotate(-10deg); font-size: 38px; opacity: 0.38; animation-delay: 1.5s; }
-.hero-deco-5 { top: 8%;  left: 28%;  transform: rotate(6deg);   font-size: 32px; opacity: 0.36; animation-delay: 0.5s; }
+.hero-deco-1 { top: 8%;    right: 3%;  transform: rotate(-10deg); font-size: 34px; opacity: 0.24; }
+.hero-deco-2 { bottom: 6%; right: 4%;  transform: rotate(12deg);  font-size: 30px; opacity: 0.22; }
+.hero-deco-3 { top: 6%;    left: 3%;   transform: rotate(8deg);   font-size: 28px; opacity: 0.20; }
+.hero-deco-4 { bottom: 4%; left: 3%;   transform: rotate(-8deg);  font-size: 32px; opacity: 0.22; }
+/* deco-5 removed — corners already covered; fewer icons = cleaner look */
 
-@keyframes heroFloat {
-  0%, 100% { transform: translateY(0) rotate(var(--rot, 0deg)); }
-  50%      { transform: translateY(-6px) rotate(var(--rot, 0deg)); }
-}
+/* Mobile: hide deco icons (they squeeze the small viewport too much) */
+@media (max-width: 720px) { .hero-deco { display: none; } }
 
 /* ============================================================
    TEXT REVEAL ANIMATION (page refresh)
    ============================================================ */
 @keyframes fadeUp {
-  from { opacity: 0; transform: translateY(12px); }
+  from { opacity: 0; transform: translateY(18px); }
   to   { opacity: 1; transform: translateY(0); }
 }
-.text-reveal { opacity: 0; animation: fadeUp 0.7s ease forwards; }
-.text-reveal:nth-child(1) { animation-delay: 0.05s; }
-.text-reveal:nth-child(2) { animation-delay: 0.15s; }
-.text-reveal:nth-child(3) { animation-delay: 0.25s; }
-.text-reveal:nth-child(4) { animation-delay: 0.35s; }
+.text-reveal { opacity: 0; animation: fadeUp 0.85s cubic-bezier(.22,.61,.36,1) forwards; }
+.text-reveal:nth-child(1) { animation-delay: 0.08s; }
+.text-reveal:nth-child(2) { animation-delay: 0.22s; }
+.text-reveal:nth-child(3) { animation-delay: 0.36s; }
+.text-reveal:nth-child(4) { animation-delay: 0.50s; }
+.text-reveal:nth-child(5) { animation-delay: 0.64s; }
 
 /* ============================================================
    SCROLL FADE-IN (IntersectionObserver target)
    ============================================================ */
-.reveal { opacity: 0; transform: translateY(16px); transition: opacity .6s ease, transform .6s ease; }
-.reveal.visible { opacity: 1; transform: translateY(0); }
+.reveal {
+  opacity: 0;
+  transform: translateY(28px) scale(0.97);
+  transition: opacity .8s cubic-bezier(.22,.61,.36,1),
+              transform .8s cubic-bezier(.22,.61,.36,1);
+  will-change: opacity, transform;
+}
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+/* Section-level reveal uses a wider translate */
+section.reveal { transform: translateY(36px); }
+section.reveal.visible { transform: translateY(0); }
 
 /* Anchor scrolling — keep popular auctions section below sticky header */
 #popularAuctions { scroll-margin-top: 120px; }
