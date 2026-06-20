@@ -2455,6 +2455,11 @@ body::before {
 .watchlist-empty h3 { font-size: 22px; font-weight: 700; color: #1F2937; margin-bottom: 8px; }
 .watchlist-empty p { color: #6B7280; margin-bottom: 20px; }
 
+/* Filter toggle button is MOBILE-ONLY — desktop already has an inline filter-bar
+   below the hero, so this button would be redundant. Hidden by default,
+   the @media (max-width: 768px) block below re-enables it with !important. */
+.filter-toggle-btn { display: none; }
+
 /* Responsive */
 @media (max-width: 768px) {
   .ending-soon-section, .similar-section { padding: 16px; }
