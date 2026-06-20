@@ -15,7 +15,7 @@ const LOCATIONS = {
 };
 const CATEGORIES = ['Electronics', 'Furniture', 'Clothing', 'Vehicles', 'Books', 'Sports', 'Home Appliances', 'Other'];
 
-// Lazy expiry: when listing, also mark expired ACTIVE auctions as ENDED
+// Lazy expiry: when listing, also mark expired ACTIVE auctions as EXPIRED
 // (replaces cron — Vercel Hobby plan has no cron jobs)
 async function expireStaleAuctions() {
   try {
@@ -26,6 +26,7 @@ async function expireStaleAuctions() {
     if (result.count > 0) console.log(`[expire] marked ${result.count} auctions EXPIRED`);
   } catch (e) {
     console.error('[expire] failed:', e.message);
+    throw e; // re-throw so the error is visible
   }
 }
 
@@ -38,6 +39,8 @@ async function handleList(req, res) {
 
     const where = {
       status: String(status),
+      // Defensive: even if lazy expiry fails, never return items past their end time
+      ...(String(status) === 'ACTIVE' && !endingIn && { endsAt: { gt: new Date() } }),
       ...(city && { city: String(city) }),
       ...(area && { area: String(area) }),
       ...(district && { district: String(district) }),
