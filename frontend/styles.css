@@ -2878,7 +2878,10 @@ body {
 .search-btn {
   border: 0; background: linear-gradient(135deg, var(--color-purple) 0%, #8B7BFF 100%);
   color: white; padding: 0 22px; font-size: 16px; cursor: pointer;
+  height: 44px; display: inline-flex; align-items: center; justify-content: center;
   transition: transform .12s ease;
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  line-height: 1;
 }
 .search-btn:hover { transform: scale(1.05); }
 
@@ -3206,12 +3209,43 @@ body {
 .hero-stat-label { font-size: 11px; color: var(--text-secondary); font-weight: 600; margin: 0; text-transform: uppercase; letter-spacing: 0.04em; }
 
 .hero-deco {
-  position: absolute; font-size: 56px; opacity: 0.55;
+  position: absolute; font-size: 48px; opacity: 0.45;
   pointer-events: none; user-select: none;
   filter: drop-shadow(0 4px 8px rgba(0,0,0,0.08));
+  animation: heroFloat 6s ease-in-out infinite;
 }
-.hero-deco-1 { top: 18%; right: 6%; transform: rotate(-12deg); }
-.hero-deco-2 { top: 60%; right: 4%; transform: rotate(8deg); }
+.hero-deco-1 { top: 14%; right: 8%;  transform: rotate(-12deg); animation-delay: 0s;   }
+.hero-deco-2 { bottom: 8%; left: 4%;  transform: rotate(8deg);  animation-delay: 1s;   }   /* chair moved away from Happy Users */
+.hero-deco-3 { top: 24%; right: 22%; transform: rotate(15deg);  font-size: 36px; opacity: 0.38; animation-delay: 2s;   }
+.hero-deco-4 { bottom: 14%; left: 18%; transform: rotate(-10deg); font-size: 38px; opacity: 0.38; animation-delay: 1.5s; }
+.hero-deco-5 { top: 8%;  left: 28%;  transform: rotate(6deg);   font-size: 32px; opacity: 0.36; animation-delay: 0.5s; }
+
+@keyframes heroFloat {
+  0%, 100% { transform: translateY(0) rotate(var(--rot, 0deg)); }
+  50%      { transform: translateY(-6px) rotate(var(--rot, 0deg)); }
+}
+
+/* ============================================================
+   TEXT REVEAL ANIMATION (page refresh)
+   ============================================================ */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.text-reveal { opacity: 0; animation: fadeUp 0.7s ease forwards; }
+.text-reveal:nth-child(1) { animation-delay: 0.05s; }
+.text-reveal:nth-child(2) { animation-delay: 0.15s; }
+.text-reveal:nth-child(3) { animation-delay: 0.25s; }
+.text-reveal:nth-child(4) { animation-delay: 0.35s; }
+
+/* ============================================================
+   SCROLL FADE-IN (IntersectionObserver target)
+   ============================================================ */
+.reveal { opacity: 0; transform: translateY(16px); transition: opacity .6s ease, transform .6s ease; }
+.reveal.visible { opacity: 1; transform: translateY(0); }
+
+/* Anchor scrolling — keep popular auctions section below sticky header */
+#popularAuctions { scroll-margin-top: 120px; }
 
 /* ============================================================
    6) FILTER BAR

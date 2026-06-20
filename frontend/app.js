@@ -2574,3 +2574,64 @@ document.addEventListener('change', (e) => {
     setCategoryFromSidebar(document.querySelector('.sb-cat-item.active') || document.querySelector('.sb-cat-item'), e.target.value);
   }
 });
+
+// ============================================================
+// PAGE-REFRESH TEXT REVEAL (hero stat labels & titles)
+// ============================================================
+function applyTextReveal() {
+  document.querySelectorAll('.hero-stat, .section-title, .view-header h1').forEach(group => {
+    if (group.dataset.revealApplied) return;
+    group.dataset.revealApplied = '1';
+    const targets = group.children.length > 0 ? Array.from(group.children) : [group];
+    targets.forEach((el, i) => {
+      el.classList.add('text-reveal');
+      el.style.animationDelay = (i * 0.1) + 's';
+    });
+  });
+}
+
+// ============================================================
+// SCROLL FADE-IN (cards reveal as user scrolls)
+// ============================================================
+let __scrollObserver = null;
+function applyScrollReveal() {
+  if (!('IntersectionObserver' in window)) return;
+  if (!__scrollObserver) {
+    __scrollObserver = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          e.target.classList.add('visible');
+          __scrollObserver.unobserve(e.target);
+        }
+      });
+    }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+  }
+  const sel = '.lot-card, .seller-card, .lot-section, .four-col-card, .deals-card';
+  document.querySelectorAll(sel).forEach(el => {
+    if (el.classList.contains('reveal')) return;
+    el.classList.add('reveal');
+    __scrollObserver.observe(el);
+  });
+}
+
+// Hook into render cycle
+const __origLoadAuctions = window.loadAuctions;
+if (typeof __origLoadAuctions === 'function') {
+  window.loadAuctions = async function(...args) {
+    const r = await __origLoadAuctions.apply(this, args);
+    setTimeout(() => { applyTextReveal(); applyScrollReveal(); }, 50);
+    return r;
+  };
+}
+const __origLoadFourCol = window.loadFourColSections;
+if (typeof __origLoadFourCol === 'function') {
+  window.loadFourColSections = async function(...args) {
+    const r = await __origLoadFourCol.apply(this, args);
+    setTimeout(() => { applyScrollReveal(); }, 50);
+    return r;
+  };
+}
+// Initial reveal pass on DOMContentLoaded
+document.addEventListener('DOMContentLoaded', () => {
+  setTimeout(() => { applyTextReveal(); applyScrollReveal(); }, 100);
+});
