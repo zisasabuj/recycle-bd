@@ -15,15 +15,16 @@ const LOCATIONS = {
 };
 const CATEGORIES = ['Electronics', 'Furniture', 'Clothing', 'Vehicles', 'Books', 'Sports', 'Home Appliances', 'Other'];
 
-// Lazy expiry: when listing, also mark expired ACTIVE auctions as EXPIRED
+// Lazy expiry: when listing, also mark expired ACTIVE auctions as ENDED
 // (replaces cron — Vercel Hobby plan has no cron jobs)
+// Note: prod DB enum is ('DRAFT','ACTIVE','ENDED','SOLD','CANCELLED') — uses ENDED, not EXPIRED
 async function expireStaleAuctions() {
   try {
     const result = await prisma.auction.updateMany({
       where: { status: 'ACTIVE', endsAt: { lt: new Date() } },
-      data: { status: 'EXPIRED' },
+      data: { status: 'ENDED' },
     });
-    if (result.count > 0) console.log(`[expire] marked ${result.count} auctions EXPIRED`);
+    if (result.count > 0) console.log(`[expire] marked ${result.count} auctions ENDED`);
   } catch (e) {
     console.error('[expire] failed:', e.message);
     throw e; // re-throw so the error is visible
