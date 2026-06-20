@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Recycle — Sealed-Bid Auctions Bangladesh</title>
-  <link rel="stylesheet" href="styles.css?v=48">
+  <link rel="stylesheet" href="styles.css?v=49">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -165,56 +165,58 @@
 
             
 
-            <!-- Sidebar: New products (latest 3 auctions) -->
-            <div class="sb-card" data-collapsible="true" data-collapsed="true">
-              <div class="sb-card-header" onclick="toggleSbCard(this)" role="button" tabindex="0" aria-expanded="false">
-                <h3 class="sb-title">Latest Items</h3>
-                <span class="sb-chevron">▾</span>
-              </div>
-              <div class="sb-card-body">
-              <div class="sb-new-list" id="sbNewList">
-                <div class="sb-new-empty">Loading…</div>
-              </div>
-              </div>
-            </div>
+            <!-- (Latest Items sidebar card removed — moved into hero as ending-soon) -->
 
           </aside>
 
           <!-- ============ MAIN COLUMN ============ -->
           <div class="main-col">
 
-            <!-- Hero Newsletter Banner -->
-            <section class="hero">
-              <div class="hero-inner">
-                <p class="hero-eyebrow">🎉 100% Sealed-Bid Auction System</p>
-                <h1 class="hero-title">Don't miss<br>amazing deals</h1>
-                <p class="hero-sub">Sign up for daily auction alerts — get notified before items close</p>
-                <form class="hero-newsletter" onsubmit="event.preventDefault(); showToast('Subscribed! (demo)','success');">
-                  <input type="email" placeholder="Your email address" required>
-                  <button type="submit">Subscribe</button>
-                </form>
-                <div class="hero-stats">
-                  <div class="hero-stat">
-                    <p class="hero-stat-num purple" id="heroActive">0</p>
-                    <p class="hero-stat-label">Active Auctions</p>
+            <!-- Hero Newsletter Banner (2-col: text left, ending-soon right) -->
+            <div class="hero-row">
+              <section class="hero">
+                <div class="hero-inner">
+                  <p class="hero-eyebrow">🎉 100% Sealed-Bid Auction System</p>
+                  <h1 class="hero-title">Don't miss<br>amazing deals</h1>
+                  <p class="hero-sub">Sign up for daily auction alerts — get notified before items close</p>
+                  <form class="hero-newsletter" onsubmit="event.preventDefault(); showToast('Subscribed! (demo)','success');">
+                    <input type="email" placeholder="Your email address" required>
+                    <button type="submit">Subscribe</button>
+                  </form>
+                  <div class="hero-stats">
+                    <div class="hero-stat">
+                      <p class="hero-stat-num purple" id="heroActive">0</p>
+                      <p class="hero-stat-label">Active Auctions</p>
+                    </div>
+                    <div class="hero-stat">
+                      <p class="hero-stat-num green" id="heroAnonymity">100%</p>
+                      <p class="hero-stat-label">Anonymity Rate</p>
+                    </div>
+                    <div class="hero-stat">
+                      <p class="hero-stat-num blue" id="heroDuration">48h</p>
+                      <p class="hero-stat-label">Auction Duration</p>
+                    </div>
+                    <div class="hero-stat">
+                      <p class="hero-stat-num purple" id="heroUsers">0</p>
+                      <p class="hero-stat-label">Happy Users</p>
+                    </div>
                   </div>
-                  <div class="hero-stat">
-                    <p class="hero-stat-num green" id="heroAnonymity">100%</p>
-                    <p class="hero-stat-label">Anonymity Rate</p>
-                  </div>
-                  <div class="hero-stat">
-                    <p class="hero-stat-num blue" id="heroDuration">48h</p>
-                    <p class="hero-stat-label">Auction Duration</p>
-                  </div>
-                  <div class="hero-stat">
-                    <p class="hero-stat-num purple" id="heroUsers">0</p>
-                    <p class="hero-stat-label">Happy Users</p>
-                  </div>
+                  <span class="hero-deco hero-deco-1">💻</span>
+                  <span class="hero-deco hero-deco-2">🪑</span>
                 </div>
-                <span class="hero-deco hero-deco-1">💻</span>
-                <span class="hero-deco hero-deco-2">🪑</span>
-              </div>
-            </section>
+              </section>
+
+              <!-- Ending Soon mini-cards (right side) -->
+              <aside class="hero-endings">
+                <div class="hero-endings-head">
+                  <h3 class="hero-endings-title">🔥 Ending Soon</h3>
+                  <a href="#dealsSection" class="hero-endings-more" onclick="document.getElementById('dealsSection')?.scrollIntoView({behavior:'smooth'}); return false;">More →</a>
+                </div>
+                <div class="hero-endings-grid" id="heroEndingSoon">
+                  <div class="hero-ending-skel">Loading…</div>
+                </div>
+              </aside>
+            </div>
 
             <!-- Filter Bar (sort + location + price + condition) -->
             <div class="filter-bar">
@@ -261,7 +263,7 @@
             </section>
 
             <!-- Deals Of The Day — Ending Soon (4 cards with countdown) -->
-            <section class="deals-section">
+            <section class="deals-section" id="dealsSection">
               <div class="lot-header">
                 <h2>⚡ Deals Of The Day</h2>
                 <a class="lot-viewall" href="#" onclick="event.preventDefault(); switchView('endingSoon');">All Deals →</a>
@@ -687,6 +689,6 @@
   <button class="icon-btn" id="settingsBtn" onclick="openSettingsModal()" style="display:none" title="Settings (Admin only)">⚙️</button>
   <span class="notif-dot" id="notifDot" style="display:none"></span>
 
-  <script src="app.js?v=45"></script>
+  <script src="app.js?v=46"></script>
 </body>
 </html>

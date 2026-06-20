@@ -2246,6 +2246,62 @@ async function loadSbNew() {
   } catch (e) { console.error('loadSbNew', e); }
 }
 
+/* ---------- Hero Ending-Soon: 4 compact cards in hero right side ---------- */
+async function loadHeroEndingSoon() {
+  const el = document.getElementById('heroEndingSoon');
+  if (!el) return;
+  try {
+    const res = await fetch(`${API_URL}/api/auctions?sort=ending&limit=4`);
+    const data = await res.json();
+    const items = (data.auctions || []).slice(0, 4);
+    if (!items.length) {
+      el.innerHTML = '<div class="hero-ending-skel">No deals ending soon.</div>';
+      return;
+    }
+    el.innerHTML = items.map(a => {
+      const icon = getCatIcon(a.category);
+      const remain = parseRemaining(a.endsAt);
+      const d = Math.max(0, Math.floor(remain / (24 * 3600 * 1000)));
+      const h = Math.max(0, Math.floor((remain % (24 * 3600 * 1000)) / (3600 * 1000)));
+      const m = Math.max(0, Math.floor((remain % (3600 * 1000)) / (60 * 1000)));
+      const s = Math.max(0, Math.floor((remain % (60 * 1000)) / 1000));
+      const timeStr = remain <= 0 ? 'Ended' : (d > 0 ? `${d}d ${h}h` : (h > 0 ? `${h}h ${m}m` : `${m}m ${s}s`));
+      return `
+        <div class="hero-ending-card" onclick="viewAuction('${a.id}')" data-end="${a.endsAt}">
+          <div class="hero-ending-icon">${icon}</div>
+          <div class="hero-ending-title">${escapeHtml(a.title)}</div>
+          <div class="hero-ending-price">৳ ${Number(a.basePrice).toLocaleString()}</div>
+          <div class="hero-ending-time">⏱ <span data-d="${d}" data-h="${h}" data-m="${m}" data-s="${s}">${timeStr}</span></div>
+        </div>
+      `;
+    }).join('');
+    startHeroEndingCountdowns();
+  } catch (e) { console.error('loadHeroEndingSoon', e); el.innerHTML = '<div class="hero-ending-skel">Failed to load.</div>'; }
+}
+
+let heroEndingInterval = null;
+function startHeroEndingCountdowns() {
+  if (heroEndingInterval) clearInterval(heroEndingInterval);
+  heroEndingInterval = setInterval(() => {
+    document.querySelectorAll('.hero-ending-time span').forEach(span => {
+      let s = parseInt(span.dataset.s, 10) - 1;
+      let m = parseInt(span.dataset.m, 10);
+      let h = parseInt(span.dataset.h, 10);
+      let d = parseInt(span.dataset.d, 10);
+      if (s < 0) { s = 59; m--; }
+      if (m < 0) { m = 59; h--; }
+      if (h < 0) { h = 23; d--; }
+      if (d < 0) { d = 0; h = 0; m = 0; s = 0; }
+      span.dataset.d = d; span.dataset.h = h; span.dataset.m = m; span.dataset.s = s;
+      const remain = ((d * 24 + h) * 60 + m) * 60 * 1000 + s * 1000;
+      if (remain <= 0) { span.textContent = 'Ended'; return; }
+      const timeStr = d > 0 ? `${d}d ${h}h` : (h > 0 ? `${h}h ${m}m` : `${m}m ${s}s`);
+      span.textContent = timeStr;
+    });
+  }, 1000);
+}
+function stopHeroEndingCountdowns() { if (heroEndingInterval) { clearInterval(heroEndingInterval); heroEndingInterval = null; } }
+
 /* ---------- Deals Of The Day: 4 ending-soon with countdown ---------- */
 async function loadDealsGrid() {
   try {
@@ -2412,6 +2468,8 @@ init = async function() {
   await _origInit();
   // After main load completes, populate deals grid (uses ending-soon sort)
   loadDealsGrid();
+  // Hero right-side ending-soon mini cards
+  loadHeroEndingSoon();
 };
 
 /* ---------- Header dropdown sync: keep headerCategorySelect in sync with currentCategory ---------- */
