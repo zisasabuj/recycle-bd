@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Recycle — Sealed-Bid Auctions Bangladesh</title>
-  <link rel="stylesheet" href="styles.css?v=50">
+  <link rel="stylesheet" href="styles.css?v=51">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -216,8 +216,11 @@
               </div>
             </section>
 
-            <!-- Filter Bar (sort + location + price + condition) -->
-            <div class="filter-bar">
+          </div>
+        </div>
+
+        <!-- Filter Bar (moved OUTSIDE body-grid so it sits above the next row; below it, categories should match its height) -->
+        <div class="filter-bar">
               <div class="filter-left">
                 <select id="topSort" onchange="loadAuctions()">
                   <option value="ending">Ending Soon</option>
@@ -331,9 +334,6 @@
                 <div class="ticker-item">⏱ <span class="num">48h</span> sealed-bid window</div>
               </div>
             </div>
-
-          </div>
-        </div>
 
       </section>
 
