@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Recycle — Sealed-Bid Auctions Bangladesh</title>
-  <link rel="stylesheet" href="styles.css?v=51">
+  <link rel="stylesheet" href="styles.css?v=52">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -216,11 +216,8 @@
               </div>
             </section>
 
-          </div>
-        </div>
-
-        <!-- Filter Bar (moved OUTSIDE body-grid so it sits above the next row; below it, categories should match its height) -->
-        <div class="filter-bar">
+            <!-- Filter Bar (inside main-col, below hero; sidebar height = hero + filter total) -->
+            <div class="filter-bar">
               <div class="filter-left">
                 <select id="topSort" onchange="loadAuctions()">
                   <option value="ending">Ending Soon</option>
@@ -252,7 +249,10 @@
               </div>
             </div>
 
-            <!-- Live Auctions grid (10 = 2 rows × 5) -->
+          </div>
+        </div>
+
+        <!-- Live Auctions grid (10 = 2 rows × 5) -->
             <section class="lot-section">
               <div class="lot-header">
                 <h2>🔥 Popular Auctions <span class="count" id="lotCount">(Loading…)</span></h2>
