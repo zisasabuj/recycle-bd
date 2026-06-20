@@ -3007,12 +3007,13 @@ body {
 .body-grid > .sidebar { flex: 0 0 260px; }
 .body-grid > .main-col { flex: 1 1 0; min-width: 0; }
 .main-col {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-rows: auto 1fr;
   min-width: 0;
   align-self: stretch;
+  min-height: 0;
 }
-.main-col > .filter-bar { margin-top: auto; }
+.main-col > .filter-bar { margin-top: auto; align-self: stretch; }
 
 /* ---- SIDEBAR ---- */
 .sidebar {
