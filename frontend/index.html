@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Recycle — Sealed-Bid Auctions Bangladesh</title>
-  <link rel="stylesheet" href="styles.css?v=61">
+  <link rel="stylesheet" href="styles.css?v=62">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -704,7 +704,8 @@
       <button class="profile-menu-item" onclick="logout(); event.stopPropagation();">🚪 Logout</button>
     </div>
   </div>
-  <button class="icon-btn" id="settingsBtn" onclick="openSettingsModal()" style="display:none" title="Settings (Admin only)">⚙️</button>
+  <!-- #settingsBtn removed from body — topbar dropdown already has ⚙️ Super Admin item that opens the same modal.
+       Keeping the standalone button caused it to float at the page bottom (footer area) for admins. -->
   <span class="notif-dot" id="notifDot" style="display:none"></span>
 
   <script src="app.js?v=54"></script>
