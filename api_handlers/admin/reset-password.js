@@ -14,12 +14,6 @@ export default withCors(async (req, res) => {
 
     // (b) one-time condition migration
     if (migrate === true) {
-      const before = await prisma.auction.groupBy({
-        by: ['condition'],
-        _count: { _all: true },
-      });
-      const beforeMap = Object.fromEntries(before.map(b => [b.condition, b._count._all]));
-
       const likeNew = await prisma.auction.updateMany({
         where: { condition: 'Like New' },
         data: { condition: 'New' },
@@ -29,21 +23,23 @@ export default withCors(async (req, res) => {
         data: { condition: 'Used' },
       });
 
-      const after = await prisma.auction.groupBy({
-        by: ['condition'],
-        _count: { _all: true },
+      // Count remaining distinct values
+      const all = await prisma.auction.findMany({
+        select: { condition: true },
       });
-      const afterMap = Object.fromEntries(after.map(a => [a.condition, a._count._all]));
+      const counts = {};
+      for (const a of all) {
+        counts[a.condition] = (counts[a.condition] || 0) + 1;
+      }
 
       return json(res, 200, {
         ok: true,
         migrated: true,
-        before: beforeMap,
-        after: afterMap,
         changed: {
           'Like New → New': likeNew.count,
           'Good → Used': good.count,
         },
+        currentDistribution: counts,
       });
     }
 
@@ -58,6 +54,6 @@ export default withCors(async (req, res) => {
     return json(res, 200, { ok: true, user });
   } catch (err) {
     console.error('[reset-password / migrate]', err);
-    return error(res, 500, 'Reset/migrate failed');
+    return error(res, 500, 'Reset/migrate failed: ' + (err.message || 'unknown'));
   }
 });
