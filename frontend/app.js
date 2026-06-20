@@ -153,7 +153,10 @@ function populateDistrictFilter() {
   districtFilter.innerHTML = '<option value="">All Districts</option>';
   if (bdDistricts && bdDistricts.length) {
     bdDistricts.forEach(d => {
-      districtFilter.innerHTML += `<option value="${d.name}">${d.name}</option>`;
+      // backend returns array of strings: ["Dhaka", "Chattogram", ...]
+      const name = (typeof d === 'string') ? d : (d && d.name) ? d.name : '';
+      if (!name) return;
+      districtFilter.innerHTML += `<option value="${name}">${name}</option>`;
     });
   } else if (bdLocations) {
     // fallback: derive keys from bdLocations map
