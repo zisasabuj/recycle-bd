@@ -3004,14 +3004,15 @@ body {
   min-width: 0;
   align-items: stretch;
 }
-.body-grid > .sidebar { flex: 0 0 260px; }
-.body-grid > .main-col { flex: 1 1 0; min-width: 0; }
+.body-grid > .sidebar { flex: 0 0 260px; align-self: stretch; }
+.body-grid > .main-col { flex: 1 1 0; min-width: 0; align-self: stretch; }
 .main-col {
   display: grid;
   grid-template-rows: auto 1fr;
   min-width: 0;
   align-self: stretch;
   min-height: 0;
+  gap: 5px;
 }
 .main-col > .filter-bar { margin-top: auto; align-self: stretch; }
 
