@@ -3593,7 +3593,10 @@ section.reveal.visible { transform: translateY(0); }
 .notif-dot { z-index: 96; }
 
 @media (max-width: 1024px) {
-  .body-grid { grid-template-columns: 1fr; }
+  /* body-grid is display:flex (row by default) — flip to column so sidebar stacks on top of main-col */
+  .body-grid { flex-direction: column; align-items: stretch; }
+  .body-grid > .sidebar { flex: 0 0 auto; width: 100%; max-width: 100%; }
+  .body-grid > .main-col { flex: 0 0 auto; width: 100%; }
   .sidebar { position: static; max-height: none; }
   .footer-inner { grid-template-columns: repeat(3, 1fr); }
   .cats-grid { grid-template-columns: repeat(4, 1fr); }
@@ -3642,8 +3645,11 @@ section.reveal.visible { transform: translateY(0); }
   /* On mobile, hide the inline nav-links — they live inside the hamburger drawer */
   .main-nav:not(.open) > .main-nav-inner > .nav-links { display: none; }
 
-  /* Sidebar / filter layout — collapse to single column */
-  .body-grid { grid-template-columns: 1fr !important; gap: 12px; }
+  /* Sidebar / filter layout — collapse to single column.
+     body-grid is display:flex on desktop — use flex-direction:column (NOT grid-template-columns, which is a no-op on flex) */
+  .body-grid { flex-direction: column !important; align-items: stretch !important; gap: 12px; }
+  .body-grid > .sidebar { flex: 0 0 auto !important; width: 100% !important; max-width: 100% !important; }
+  .body-grid > .main-col { flex: 0 0 auto !important; width: 100% !important; max-width: 100% !important; }
   .sidebar { position: static !important; width: 100% !important; max-width: 100% !important; }
   .sidebar .filter-card,
   .sidebar > div { padding: 14px; }
