@@ -242,6 +242,36 @@ document.addEventListener('click', (e) => {
   closeBrowseCategories();
 }, true);
 
+// ---- Filter dropdown (mobile) ----
+// On mobile the filter-bar is hidden from in-flow; this toggles it as a
+// fixed dropdown panel anchored under the nav, with a backdrop to close on tap.
+function toggleFilterBar(e) {
+  if (e) { e.preventDefault(); e.stopPropagation(); }
+  // Opening filter should close the categories dropdown if it's open
+  if (!document.body.classList.contains('filter-open')) {
+    closeBrowseCategories();
+  }
+  const isOpen = document.body.classList.toggle('filter-open');
+  const btn = document.getElementById('filterToggleBtn');
+  if (btn) btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+}
+
+function closeFilterBar() {
+  document.body.classList.remove('filter-open');
+  const btn = document.getElementById('filterToggleBtn');
+  if (btn) btn.setAttribute('aria-expanded', 'false');
+}
+
+// Close Filter dropdown when clicking outside (mobile dropdown)
+document.addEventListener('click', (e) => {
+  if (!document.body.classList.contains('filter-open')) return;
+  const filterBar = document.querySelector('.main-col > .filter-bar');
+  const btn = document.getElementById('filterToggleBtn');
+  if (filterBar && filterBar.contains(e.target)) return; // click inside filter — keep open
+  if (btn && btn.contains(e.target)) return; // click on toggle button — toggleFilterBar handles this
+  closeFilterBar();
+}, true);
+
 // Close mobile menu on resize to desktop width
 let resizeTimer = null;
 window.addEventListener('resize', () => {
@@ -250,6 +280,7 @@ window.addEventListener('resize', () => {
     if (window.innerWidth > 900) {
       closeMobileMenu();
       closeBrowseCategories();
+      closeFilterBar();
     }
   }, 150);
 });

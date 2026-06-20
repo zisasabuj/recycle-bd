@@ -3638,9 +3638,48 @@ section.reveal.visible { transform: translateY(0); }
   .hdr-action[data-hdr-action="watchlist"],
   .hdr-action[data-hdr-action="cart"] { display: none; }
 
-  /* Main nav — full width stacked on mobile */
+  /* Main nav — Browse + Filter side-by-side in a row, equal height */
   .main-nav-inner { flex-direction: column; gap: 10px; align-items: stretch; padding: 10px 12px; }
-  .main-nav-inner > .browse-btn { width: 100%; justify-content: center; }
+  .nav-action-row {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: stretch !important;
+    gap: 8px !important;
+    width: 100% !important;
+  }
+  .nav-action-row > .browse-btn {
+    flex: 1 1 0 !important;
+    width: auto !important;
+    min-width: 0 !important;
+    justify-content: center !important;
+    padding: 8px 10px !important;
+    font-size: 13px !important;
+    gap: 6px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+  .nav-action-row > .browse-btn .browse-bars { font-size: 13px; }
+  .filter-toggle-btn {
+    flex: 0 0 auto !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 6px !important;
+    padding: 8px 14px !important;
+    border-radius: var(--radius-md, 10px) !important;
+    background: linear-gradient(135deg, var(--color-purple, #6b5dd3) 0%, #8B7BFF 100%) !important;
+    color: #fff !important;
+    border: none !important;
+    cursor: pointer !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    white-space: nowrap !important;
+    box-shadow: 0 2px 8px rgba(107, 93, 211, 0.25) !important;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  .filter-toggle-btn:active { transform: scale(0.97); }
+  .filter-toggle-ico { font-size: 15px; line-height: 1; }
   .main-nav-inner > .nav-support { display: none; }
   /* On mobile, hide the inline nav-links — they live inside the hamburger drawer */
   .main-nav:not(.open) > .main-nav-inner > .nav-links { display: none; }
@@ -3708,6 +3747,9 @@ section.reveal.visible { transform: translateY(0); }
   /* Filter-bar becomes visible right after the hero (was margin-top:auto, pushed to bottom of main-col) */
   .main-col > .filter-bar { margin-top: 0 !important; order: -1; }
 
+  /* On mobile, hide filter-bar from in-flow — it lives in the Filter dropdown */
+  body:not(.filter-open) .main-col > .filter-bar { display: none !important; }
+
   /* Backdrop */
   body.browse-open::after {
     content: '';
@@ -3749,6 +3791,83 @@ section.reveal.visible { transform: translateY(0); }
 
   /* Lock background scroll while dropdown is open */
   body.browse-open { overflow: hidden; }
+
+  /* ---- Filter dropdown panel (mirror of browse dropdown) ---- */
+  /* Backdrop for filter (separate z-index from browse backdrop; only one is open at a time) */
+  body.filter-open::after {
+    content: '';
+    position: fixed; inset: 0;
+    background: rgba(15, 23, 42, 0.45);
+    z-index: 89;
+    animation: backdropFade 180ms ease-out;
+  }
+
+  /* Drop the in-flow filter-bar back into layout but as a fixed panel */
+  body.filter-open .main-col > .filter-bar {
+    display: flex !important;
+    position: fixed;
+    top: 132px;            /* same as browse dropdown — below header + main-nav */
+    left: 12px;
+    right: 12px;
+    max-height: calc(100vh - 156px);
+    overflow-y: auto;
+    z-index: 95;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: var(--space-3, 12px) !important;
+    background: #fff;
+    border: 1px solid var(--glass-border, #E5E7EB);
+    border-radius: 14px;
+    box-shadow: 0 18px 40px rgba(15, 23, 42, 0.22), 0 4px 12px rgba(15, 23, 42, 0.08);
+    padding: 14px;
+    animation: browseDrop 200ms cubic-bezier(.2,.8,.2,1);
+    flex-wrap: nowrap !important;
+  }
+  /* Inside the filter dropdown: each row (left/mid/right) goes full-width */
+  body.filter-open .filter-bar .filter-left,
+  body.filter-open .filter-bar .filter-mid,
+  body.filter-open .filter-bar .filter-right {
+    display: flex !important;
+    width: 100% !important;
+    flex-wrap: wrap !important;
+    gap: 8px;
+  }
+  body.filter-open .filter-bar select {
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    width: auto !important;
+    min-height: 40px !important;
+    font-size: 13px !important;
+  }
+  body.filter-open .filter-bar .filter-price {
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    flex-wrap: nowrap !important;
+    width: 100% !important;
+  }
+  body.filter-open .filter-bar .filter-price-input {
+    flex: 1 1 0 !important;
+    min-width: 0 !important;
+  }
+  body.filter-open .filter-bar .filter-price-input input {
+    width: 100% !important;
+    font-size: 13px !important;
+    min-height: 40px !important;
+  }
+  body.filter-open .filter-bar button {
+    min-height: 40px !important;
+    font-size: 13px !important;
+  }
+
+  /* Active state on Filter button when dropdown is open */
+  body.filter-open #filterToggleBtn {
+    background: linear-gradient(135deg, #5b4dc7 0%, #7a6bff 100%);
+    box-shadow: 0 4px 14px rgba(107, 93, 211, 0.45);
+  }
+
+  /* Lock scroll when filter dropdown is open */
+  body.filter-open { overflow: hidden; }
 }
 
 /* ===== Desktop (always visible, no toggle) ===== */
