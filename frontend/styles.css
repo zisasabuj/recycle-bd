@@ -2459,8 +2459,8 @@ body::before {
    sidebar / inline filter-bar, so these toggles would be redundant.
    Hidden by default, the @media (max-width: 768px) blocks below
    re-enable them with !important. */
-.filter-toggle-btn { display: none; }
-.browse-btn { display: none; }
+.filter-toggle-btn { display: none !important; }
+.browse-btn { display: none !important; }
 
 /* Responsive */
 @media (max-width: 768px) {
