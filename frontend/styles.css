@@ -2455,10 +2455,12 @@ body::before {
 .watchlist-empty h3 { font-size: 22px; font-weight: 700; color: #1F2937; margin-bottom: 8px; }
 .watchlist-empty p { color: #6B7280; margin-bottom: 20px; }
 
-/* Filter toggle button is MOBILE-ONLY — desktop already has an inline filter-bar
-   below the hero, so this button would be redundant. Hidden by default,
-   the @media (max-width: 768px) block below re-enables it with !important. */
+/* Filter toggle + Browse buttons are MOBILE-ONLY — desktop has its own
+   sidebar / inline filter-bar, so these toggles would be redundant.
+   Hidden by default, the @media (max-width: 768px) blocks below
+   re-enable them with !important. */
 .filter-toggle-btn { display: none; }
+.browse-btn { display: none; }
 
 /* Responsive */
 @media (max-width: 768px) {
@@ -3663,6 +3665,7 @@ section.reveal.visible { transform: translateY(0); }
     white-space: nowrap !important;
     overflow: hidden !important;
     text-overflow: ellipsis !important;
+    display: inline-flex !important;
   }
   .nav-action-row > .browse-btn .browse-bars { font-size: 13px; }
   .filter-toggle-btn {
