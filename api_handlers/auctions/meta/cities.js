@@ -1,4 +1,7 @@
 // GET /api/auctions/meta/cities — major BD cities + urban areas (for product listing form)
+// Returns a list of major BD cities (Dhaka, Chittagong, Sylhet, ...) and their
+// urban neighborhoods. Used as the primary location selector on the
+// create-auction form (separate from the admin-district BD_LOCATIONS map).
 import { BD_CITIES, BD_CITY_NAMES } from '../../../_lib/bdLocations.js';
 import { withCors, json } from '../../../_lib/middleware.js';
 
