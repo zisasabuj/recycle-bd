@@ -3,11 +3,28 @@
 //   - condition: 'New'  → cart-only, no bidding fields
 //   - condition: 'Used' + listingType: 'BID'   → bidding (basePrice + bidIncrement + biddingDurationDays)
 //   - condition: 'Used' + listingType: 'FIXED' → cart-only (fixed price, no bidding)
-// Location: city = District, area = Area/Thana (BD 64-district cascade)
+// Location: city = a major BD city, area = urban neighborhood within that city.
+// INLINE: BD_CITIES kept inline (Vercel esbuild cache drops newly-added
+// exports from bdLocations.js when bundled into a fresh function).
 import { prisma } from '../_lib/prisma.js';
 import { uploadToImgBB } from '../_lib/imgbb.js';
 import { withCors, withAuth, json, error } from '../_lib/middleware.js';
-import { BD_CITIES, getAreas } from '../_lib/bdLocations.js';
+
+const BD_CITIES = {
+  'Dhaka':       ['Dhanmondi', 'Mohammadpur', 'Mirpur', 'Uttara', 'Gulshan', 'Banani', 'Bashundhara', 'Old Dhaka', 'Tejgaon', 'Ramna', 'Malibagh', 'Badda', 'Rampura', 'Khilgaon', 'Motijheel', 'Paltan', 'Wari', 'Lalbagh', 'Azimpur', 'New Market', 'Hazaribagh', 'Kamrangirchar', 'Keraniganj', 'Savar', 'Tongi'],
+  'Chittagong':  ['Agrabad', 'Panchlaish', 'Khulshi', 'Halishahar', 'Nasirabad', 'Chawk Bazaar', 'Patiya', 'Karnaphuli', 'Bayazid', 'Hathazari'],
+  'Sylhet':      ['Zindabazar', 'Ambarkhana', 'Akhalia', 'Shahporan', 'Beanibazar', 'Moulvibazar'],
+  'Rajshahi':    ['Shaheb Bazar', 'Boalia', 'Motihar', 'Rajpara', 'Shiroil'],
+  'Khulna':      ['Sonadanga', 'Khalishpur', 'Daulatpur', 'Khan Jahan Ali', 'Nirala'],
+  'Barishal':    ['Sadar Road', 'Nathullabad', 'Rupatali', 'Banglabazar'],
+  'Rangpur':     ['Jahaj Company', 'Pairaband', 'Mahiganj', 'Keranipara'],
+  'Mymensingh':  ['Sadar', 'Charpara', 'Kachijhuli', 'Chorganga'],
+  'Comilla':     ['Kandirpar', 'Ranir Bazar', 'Tomsom Bridge', 'Bhooter Goli'],
+  'Gazipur':     ['Tongi', 'Board Bazar', 'Joydebpur', 'Kaliakair', 'Sreepur', 'Kapasia'],
+  'Narayanganj': ['Sadar', 'Bandar', 'Araihazar', 'Rupganj', 'Sonargaon'],
+  "Cox's Bazar": ['Sadar', 'Kolatoli', 'Sugandha', 'Laboni Beach', 'Inani'],
+};
+const getAreas = (city) => BD_CITIES[city] || [];
 
 const CATEGORIES = ['Electronics', 'Furniture', 'Clothing', 'Vehicles', 'Books', 'Sports', 'Home Appliances', 'Other'];
 const VALID_LISTING_TYPES = ['BID', 'FIXED'];
