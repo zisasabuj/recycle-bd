@@ -1,6 +1,8 @@
 // Bangladesh administrative divisions: District → Thana (Police Station / Upazila)
 // Source: Local Government Engineering Department (LGED) reference list
 // 64 districts, ~495 thanas. Used for buyer/seller location search.
+//
+// v2 (2026-06-22): added BD_CITIES for product listing form (city+area model)
 
 // Major cities with their urban areas (used for product listing form).
 // Each city has its well-known neighborhoods/areas. This is the primary
