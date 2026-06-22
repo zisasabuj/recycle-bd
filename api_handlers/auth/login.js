@@ -34,6 +34,6 @@ export default withCors(async (req, res) => {
     });
   } catch (err) {
     console.error('[login]', err);
-    return error(res, 500, 'Login failed');
+    return error(res, 500, 'Login failed: ' + (err.message || 'unknown') + ' | code=' + (err.code || 'n/a'));
   }
 });

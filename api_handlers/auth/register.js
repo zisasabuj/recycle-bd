@@ -38,6 +38,6 @@ export default withCors(async (req, res) => {
     return json(res, 201, { user, token });
   } catch (err) {
     console.error('[register]', err);
-    return error(res, 500, 'Registration failed');
+    return error(res, 500, 'Registration failed: ' + (err.message || 'unknown') + ' | code=' + (err.code || 'n/a'));
   }
 });
