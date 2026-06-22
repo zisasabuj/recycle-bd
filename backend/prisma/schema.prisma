@@ -50,6 +50,7 @@ model User {
   sellerDeals   Transaction[]  @relation("SellerDeals")
   notifications Notification[]
   watchlist     Watchlist[]
+  cartItems     CartItem[]
   chatsAsBuyer  Chat[]         @relation("ChatBuyer")
   chatsAsSeller Chat[]         @relation("ChatSeller")
   chatMessages  ChatMessage[] @relation("ChatMessagesByUser")
@@ -79,6 +80,13 @@ model Auction {
   endsAt         DateTime
   status         AuctionStatus  @default(ACTIVE)
 
+  // Bidding duration in days (2-7), required for Used items, ignored for New items (cart-only)
+  biddingDurationDays Int?
+  // First bid timestamp — used to compute endsAt for Used items (endsAt = firstBidAt + duration)
+  firstBidAt     DateTime?
+  // endsAt is computed lazily: for ACTIVE auctions with bids, effective end = firstBidAt + duration.
+  // Cron + worker check this each tick.
+
   winnerId       String?
   secondWinnerId String?
 
@@ -86,12 +94,13 @@ model Auction {
   transaction    Transaction?
   watchlist      Watchlist[]
   chats          Chat[]
+  cartItems      CartItem[]
 
   // Seller analytics — incremental counters (cheap to read on dashboard)
   viewCount      Int            @default(0)
 
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
 
   @@index([status, endsAt])
   @@index([category, city])
@@ -153,6 +162,19 @@ model Notification {
 
 // ========== v26 NEW: Watchlist ==========
 model Watchlist {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  auctionId String
+  auction   Auction  @relation(fields: [auctionId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, auctionId])
+  @@index([userId])
+}
+
+// ========== v33 NEW: Cart (New items only — buy now, no bidding) ==========
+model CartItem {
   id        String   @id @default(cuid())
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)

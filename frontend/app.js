@@ -185,7 +185,148 @@ function updateThanaFilter() {
 // ========== AUTH ==========
 function openAuthModal() { document.getElementById('authModal').style.display = 'flex'; }
 function closeAuthModal() { document.getElementById('authModal').style.display = 'none'; document.getElementById('authError').textContent = ''; }
-function openCreateModal() { document.getElementById('createModal').style.display = 'flex'; }
+function openCreateModal() { document.getElementById('createModal').style.display = 'flex'; onConditionChange(); }
+
+// Show/hide Bidding Duration field based on condition
+// Used = bidding (duration required), New = cart-only (no bidding)
+function onConditionChange() {
+  const cond = document.getElementById('condition')?.value || 'Used';
+  const label = document.getElementById('biddingDurationLabel');
+  const select = document.getElementById('biddingDurationDays');
+  const submitBtn = document.getElementById('createSubmitBtn');
+  if (!label || !select) return;
+  if (cond === 'Used') {
+    label.style.display = '';
+    select.required = true;
+    if (submitBtn) submitBtn.textContent = 'Post for Bidding';
+  } else {
+    label.style.display = 'none';
+    select.required = false;
+    select.value = '';
+    if (submitBtn) submitBtn.textContent = 'Post for Sale';
+  }
+}
+
+// ========== CONDITION-AWARE CTA RENDERING ==========
+// New items → cart only (Add to Cart button, no bidding)
+// Used items → bid only (Place Bid form, no cart)
+// Returns HTML string for the CTA card.
+
+function renderNewItemCta(a, isSeller) {
+  const isActive = a.status === 'ACTIVE';
+  const deleteBtn = `<button class="koko-cta-btn koko-delete" style="background:#dc2626;margin-top:8px" onclick="deleteAuction('${a.id}', '${escapeAttr(a.title)}')">🗑️ Delete This Auction</button>`;
+  if (isSeller) {
+    return '<p class="koko-cta-label">You are the seller of this auction</p>' + deleteBtn;
+  }
+  if (!currentUser) {
+    return '<p class="koko-cta-label">🔒 <a onclick="showAuthModal()" style="cursor:pointer;color:var(--color-purple);text-decoration:underline">Login</a> to purchase this new item</p>';
+  }
+  if (!isActive) {
+    return '<p class="koko-cta-label">Auction is not currently active</p>';
+  }
+  return `
+    <p class="koko-cta-label">🛒 New item — direct purchase via cart</p>
+    <div class="koko-cta-input">
+      <span class="prefix">৳</span>
+      <input type="number" id="cartAmount" value="${Number(a.basePrice).toLocaleString()}" readonly style="background:#f3f4f6" />
+    </div>
+    <button class="koko-cta-btn" onclick="addToCart('${a.id}')">🛒 Add to Cart</button>
+    <p class="koko-cta-hint">Fixed price · Secure checkout · No bidding on new items</p>
+  `;
+}
+
+function renderUsedItemCta(a, isSeller, minNext, myTop) {
+  const isActive = a.status === 'ACTIVE';
+  const deleteBtn = `<button class="koko-cta-btn koko-delete" style="background:#dc2626;margin-top:8px" onclick="deleteAuction('${a.id}', '${escapeAttr(a.title)}')">🗑️ Delete This Auction</button>`;
+  if (isSeller) {
+    return '<p class="koko-cta-label">You are the seller of this auction</p>' + deleteBtn;
+  }
+  if (!currentUser) {
+    return '<p class="koko-cta-label">🔒 <a onclick="showAuthModal()" style="cursor:pointer;color:var(--color-purple);text-decoration:underline">Login</a> to place a sealed bid</p>';
+  }
+  if (!isActive) {
+    return '<p class="koko-cta-label">Auction is not currently active</p>';
+  }
+  const hint = myTop ? `Your highest: ৳ ${Number(myTop).toLocaleString()}` : `You haven't bid yet`;
+  const startHint = a.firstBidAt
+    ? `Bidding ends in ${timeUntil(a.endsAt)}`
+    : `Auction starts on first bid · Duration: ${a.biddingDurationDays || '—'} days`;
+  return `
+    <p class="koko-cta-label">Place Sealed Bid (Minimum ৳ ${Number(minNext).toLocaleString()})</p>
+    <div class="koko-cta-input">
+      <span class="prefix">৳</span>
+      <input type="number" id="bidAmount" value="${minNext}" min="${minNext}" />
+    </div>
+    <button class="koko-cta-btn" onclick="placeBid('${a.id}', ${Number(a.bidIncrement)})">🔨 Place Bid</button>
+    <p class="koko-cta-hint">Min <strong>৳ ${Number(minNext).toLocaleString()}</strong> required · ${hint}</p>
+    <p class="koko-cta-hint">${startHint}</p>
+  `;
+}
+
+// ========== CART FRONTEND ==========
+async function addToCart(auctionId) {
+  if (!currentUser) { showAuthModal(); return; }
+  try {
+    const res = await fetch(`${API_URL}/api/cart`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ auctionId })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      alert('❌ ' + (data.error || 'Failed to add to cart'));
+      return;
+    }
+    alert('✅ Added to cart! Visit "My Cart" in the user menu to checkout.');
+    loadAuctions(); // refresh
+  } catch (err) {
+    console.error('[cart add]', err);
+    alert('❌ Network error');
+  }
+}
+
+async function removeFromCart(auctionId) {
+  try {
+    await fetch(`${API_URL}/api/cart/${auctionId}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    loadCartView();
+  } catch (err) {
+    console.error('[cart remove]', err);
+  }
+}
+
+async function loadCartView() {
+  const container = document.getElementById('cartContainer');
+  if (!container) return;
+  if (!currentUser) {
+    container.innerHTML = '<p>🔒 <a onclick="showAuthModal()" style="cursor:pointer;color:var(--color-purple)">Login</a> to view your cart</p>';
+    return;
+  }
+  try {
+    const res = await fetch(`${API_URL}/api/cart`, { headers: { Authorization: `Bearer ${token}` } });
+    const data = await res.json();
+    const items = data.items || [];
+    if (items.length === 0) {
+      container.innerHTML = '<p style="padding:24px;text-align:center;color:#6b7280">🛒 Your cart is empty</p>';
+      return;
+    }
+    container.innerHTML = items.map(ci => `
+      <div class="cart-item" style="display:flex;gap:12px;padding:12px;border-bottom:1px solid #e5e7eb;align-items:center">
+        <img src="${ci.auction.images?.[0] || ''}" style="width:60px;height:60px;object-fit:cover;border-radius:6px" />
+        <div style="flex:1">
+          <p style="font-weight:600;margin:0">${escapeHtml(ci.auction.title)}</p>
+          <p style="margin:2px 0;color:#6b7280;font-size:13px">৳ ${Number(ci.auction.basePrice).toLocaleString()} · ${ci.auction.condition}</p>
+        </div>
+        <button class="btn-back" onclick="removeFromCart('${ci.auctionId}')">Remove</button>
+      </div>
+    `).join('');
+  } catch (err) {
+    console.error('[cart list]', err);
+    container.innerHTML = '<p style="color:#dc2626">Failed to load cart</p>';
+  }
+}
 // (closeCreateModal richer version defined later)
 
 // ---- Mobile menu (hamburger) ----
@@ -946,6 +1087,11 @@ function switchView(view) {
     loadWatchlistView();
     return;
   }
+  if (view === 'cart') {
+    document.getElementById('cartSection').style.display = 'block';
+    loadCartView();
+    return;
+  }
   if (view === 'dashboard') {
     document.getElementById('dashboardSection').style.display = 'block';
     loadDashboardView();
@@ -1310,21 +1456,9 @@ function renderAuctionDetail(a) {
             </div>
           </div>
 
-          <!-- Card 5: bid input form (or login prompt) -->
+          <!-- Card 5: bid input form (or login prompt) OR add-to-cart for New items -->
           <div class="koko-card koko-card-cta">
-            ${!isSeller && currentUser && a.status === 'ACTIVE' ? `
-              <p class="koko-cta-label">Place Sealed Bid (Minimum ৳ ${minNext.toLocaleString()})</p>
-              <div class="koko-cta-input">
-                <span class="prefix">৳</span>
-                <input type="number" id="bidAmount" value="${minNext}" min="${minNext}" />
-                <button class="koko-cta-btn" onclick="placeBid('${a.id}', ${Number(a.bidIncrement)})">
-                  🔨 Place Bid
-                </button>
-              </div>
-              <p class="koko-cta-hint">Min <strong>৳ ${minNext.toLocaleString()}</strong> required · ${myTop ? `Your highest: ৳ ${Number(myTop).toLocaleString()}` : 'You haven\'t bid yet'}</p>
-            ` : isSeller ? '<p class="koko-cta-label">You are the seller of this auction</p><button class="koko-cta-btn koko-delete" style="background:#dc2626;margin-top:8px" onclick="deleteAuction(\''+a.id+'\', \''+escapeAttr(a.title)+'\')">🗑️ Delete This Auction</button>'
-            : !currentUser ? '<p class="koko-cta-label">🔒 <a onclick="showAuthModal()" style="cursor:pointer;color:var(--color-purple);text-decoration:underline">Login</a> to place a sealed bid</p>'
-            : '<p class="koko-cta-label">Auction is not currently active</p>'}
+            ${a.condition === 'New' ? renderNewItemCta(a, isSeller) : renderUsedItemCta(a, isSeller, minNext, myTop)}
             ${(canDelete(a) && !isSeller) ? '<button class="koko-cta-btn koko-delete" style="background:#dc2626;margin-top:8px" onclick="deleteAuction(\''+a.id+'\', \''+escapeAttr(a.title)+'\')">🗑️ Admin: Delete This Auction</button>' : ''}
           </div>
 
@@ -1715,6 +1849,11 @@ async function handleCreateAuction(e) {
   formData.append('area', document.getElementById('area').value);
   formData.append('district', document.getElementById('district').value);
   formData.append('thana', document.getElementById('thana').value);
+  // Bidding duration: only for Used items. New items are cart-only (no bidding).
+  const cond = document.getElementById('condition').value;
+  if (cond === 'Used') {
+    formData.append('biddingDurationDays', document.getElementById('biddingDurationDays').value);
+  }
 
   try {
     // Show progress
@@ -1756,11 +1895,12 @@ async function handleCreateAuction(e) {
       });
     } else {
       // ===== CREATE MODE =====
+      const condNow = document.getElementById('condition').value;
       const jsonBody = {
         title: document.getElementById('title').value,
         description: document.getElementById('description').value,
         category: document.getElementById('category').value,
-        condition: document.getElementById('condition').value,
+        condition: condNow,
         basePrice: document.getElementById('basePrice').value,
         bidIncrement: document.getElementById('bidIncrement').value || 100,
         city: document.getElementById('city').value,
@@ -1769,6 +1909,10 @@ async function handleCreateAuction(e) {
         thana: document.getElementById('thana').value,
         images: imageDataUris
       };
+      // Bidding duration: only for Used items
+      if (condNow === 'Used') {
+        jsonBody.biddingDurationDays = parseInt(document.getElementById('biddingDurationDays').value, 10);
+      }
       res = await fetch(`${API_URL}/api/x/upload-auction`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -1781,7 +1925,9 @@ async function handleCreateAuction(e) {
     if (editingAuctionId) {
       alert('✅ Auction updated!');
     } else {
-      alert('✅ Auction created with ' + data.auction.images.length + ' image(s)! 48h timer started.');
+      const dur = data.auction.biddingDurationDays;
+      const msg = dur ? `Bidding will run for ${dur} days after the first bid arrives.` : 'New item: direct purchase via cart.';
+      alert(`✅ Auction created with ${data.auction.images.length} image(s)! ${msg}`);
     }
     selectedFiles = [];
     document.getElementById('images').value = '';

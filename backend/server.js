@@ -13,6 +13,7 @@ import uploadRoutes from './routes/upload.js';
 import watchlistRoutes from './routes/watchlist.js';
 import chatRoutes from './routes/chats.js';
 import adminRoutes from './routes/admin.js';
+import cartRoutes from './routes/cart.js';
 import { UPLOADS_ABSOLUTE_DIR } from './lib/upload.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -58,6 +59,7 @@ app.use('/api/payments', paymentRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/watchlist', watchlistRoutes);
 app.use('/api/chats', chatRoutes);
+app.use('/api/cart', cartRoutes);
 app.use('/api/settings', adminRoutes);
 app.use('/api/admin/settings', adminRoutes);
 

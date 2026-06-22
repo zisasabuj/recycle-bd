@@ -1,6 +1,7 @@
 import { prisma } from '../lib/prisma.js';
 import { verifySocketToken } from '../lib/socketAuth.js';
 import { placeBidSchema } from '../validators/bidValidator.js';
+import { scheduleAuctionEnd } from '../workers/auctionTimer.js';
 
 /**
  * Socket events for auction bidding
@@ -68,7 +69,21 @@ export function auctionHandler(io, socket) {
 
         if (!auction) throw new Error('Auction not found');
         if (auction.status !== 'ACTIVE') throw new Error('Auction is not active');
-        if (new Date() > auction.endsAt) throw new Error('Auction has expired');
+        // New (cart-only) items don't accept bids — buyers must add to cart and checkout
+        if (auction.condition === 'New') throw new Error('This item is for direct purchase — use Add to Cart instead of bidding');
+        // Lazy-resolve endsAt for Used items: if no first bid yet, end = now + durationDays
+        let effectiveEndsAt = auction.endsAt;
+        if (!auction.firstBidAt && auction.biddingDurationDays) {
+          const newEndsAt = new Date(Date.now() + auction.biddingDurationDays * 24 * 60 * 60 * 1000);
+          await tx.auction.update({
+            where: { id: auctionId },
+            data: { firstBidAt: new Date(), endsAt: newEndsAt }
+          });
+          effectiveEndsAt = newEndsAt;
+          // Reschedule auction end timer to match the new endsAt (firstBidAt + durationDays)
+          try { scheduleAuctionEnd(auctionId, newEndsAt, io); } catch (e) { /* timer is best-effort */ }
+        }
+        if (new Date() > effectiveEndsAt) throw new Error('Auction has expired');
         if (auction.sellerId === socket.userId) throw new Error('Sellers cannot bid on their own auctions');
 
         // Get current top bid

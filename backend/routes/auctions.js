@@ -47,7 +47,7 @@ router.get('/meta/bd-locations', (req, res) => {
 // POST /api/auctions - create new auction
 router.post('/', authMiddleware, async (req, res) => {
   try {
-    const { title, description, images, category, condition, basePrice, bidIncrement, city, area, district, thana } = req.body;
+    const { title, description, images, category, condition, basePrice, bidIncrement, city, area, district, thana, biddingDurationDays } = req.body;
 
     if (!title || !description || !basePrice || !city || !area) {
       return res.status(400).json({ error: 'title, description, basePrice, city, area required' });
@@ -62,14 +62,28 @@ router.post('/', authMiddleware, async (req, res) => {
       return res.status(400).json({ error: 'Invalid category' });
     }
     // Optional BD district + thana validation
-    if (district && !BD_LOCATIONS[district]) {
+    if (district && !BD_DISTRICTS[district] && !BD_LOCATIONS[district]) {
       return res.status(400).json({ error: `Invalid district: ${district}` });
     }
     if (thana && (!district || !getThanas(district).includes(thana))) {
       return res.status(400).json({ error: `Invalid thana: ${thana} (must belong to selected district)` });
     }
 
-    const endsAt = new Date(Date.now() + 48 * 60 * 60 * 1000); // 48 hours
+    const cond = condition || 'Used';
+
+    // Bidding duration: required for Used items (2-7 days), ignored for New items (cart-only, no bidding)
+    let durationDays = null;
+    if (cond === 'Used') {
+      const d = parseInt(biddingDurationDays, 10);
+      if (!Number.isFinite(d) || d < 2 || d > 7) {
+        return res.status(400).json({ error: 'biddingDurationDays required for Used items: must be 2-7' });
+      }
+      durationDays = d;
+    }
+
+    // endsAt placeholder — for Used items, will be REWRITTEN to (firstBidAt + duration) lazily once first bid arrives.
+    // For New items, endsAt is unused (cart-only, status flips to COMPLETED on purchase).
+    const endsAt = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000); // far-future placeholder; lazy-resolved
     const auction = await prisma.auction.create({
       data: {
         sellerId: req.userId,
@@ -77,14 +91,15 @@ router.post('/', authMiddleware, async (req, res) => {
         description,
         images: images || [],
         category,
-        condition: condition || 'Used',
+        condition: cond,
         basePrice,
         bidIncrement: bidIncrement || 100,
         city,
         area,
         district: district || null,
         thana: thana || null,
-        endsAt
+        endsAt,
+        biddingDurationDays: durationDays
       },
       include: {
         seller: { select: { username: true, rating: true } },
@@ -92,8 +107,14 @@ router.post('/', authMiddleware, async (req, res) => {
       }
     });
 
-    // Schedule the 48h timer
-    await scheduleAuctionEnd(auction.id, endsAt);
+    // Schedule the auction end based on condition:
+    // - Used: ends at firstBidAt + durationDays (set on first bid; initial schedule is far-future placeholder)
+    // - New: endsAt is irrelevant (no bidding); never schedule
+    if (cond === 'Used' && durationDays) {
+      // Lazy: schedule a check 1 minute later — by then bids may have arrived.
+      // Actual endsAt is set when first bid lands (see POST /api/bids).
+      await scheduleAuctionEnd(auction.id, endsAt);
+    }
 
     res.status(201).json({ auction });
   } catch (err) {
