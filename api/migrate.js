@@ -12,7 +12,10 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 const DROP_ALL = [
-  // Drop in reverse FK order
+  // Drop orphan/old tables first (don't break on missing)
+  `DROP TABLE IF EXISTS "EditModeSetting" CASCADE;`,
+  `DROP TABLE IF EXISTS "Message" CASCADE;`,
+  // Drop current schema tables in reverse FK order
   `DROP TABLE IF EXISTS "ChatMessage" CASCADE;`,
   `DROP TABLE IF EXISTS "Chat" CASCADE;`,
   `DROP TABLE IF EXISTS "CartItem" CASCADE;`,
