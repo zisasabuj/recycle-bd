@@ -207,6 +207,35 @@ export default async function handler(req, res) {
 
   const url = new URL(req.url, 'https://x');
   const dropFirst = url.searchParams.get('drop') === '1' || req.query?.drop === '1';
+  const debugMode = url.searchParams.get('debug') === '1' || req.query?.debug === '1';
+
+  if (debugMode) {
+    try {
+      const cols = await prisma.$queryRawUnsafe(`
+        SELECT column_name, data_type, is_nullable
+        FROM information_schema.columns
+        WHERE table_name = 'User' ORDER BY ordinal_position;
+      `);
+      const tables = await prisma.$queryRawUnsafe(`
+        SELECT table_name FROM information_schema.tables
+        WHERE table_schema = 'public' ORDER BY table_name;
+      `);
+      const enums = await prisma.$queryRawUnsafe(`
+        SELECT t.typname, array_agg(e.enumlabel ORDER BY e.enumsortorder) AS values
+        FROM pg_type t JOIN pg_enum e ON t.oid = e.enumtypid
+        GROUP BY t.typname ORDER BY t.typname;
+      `);
+      return res.status(200).json({
+        mode: 'debug',
+        userColumns: cols,
+        allTables: tables,
+        allEnums: enums,
+      });
+    } catch (e) {
+      return res.status(500).json({ error: e.message });
+    }
+  }
+
   const dropResults = { dropped: 0, errors: [] };
 
   if (dropFirst) {
