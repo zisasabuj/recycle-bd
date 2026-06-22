@@ -71,7 +71,7 @@ async function loadMeta() {
       fetch(`${API_URL}/api/x/locations`),
       fetch(`${API_URL}/api/x/categories`),
       fetch(`${API_URL}/api/x/bd-locations`),
-      fetch(`${API_URL}/api/x/cities`)
+      fetch(`${API_URL}/api/x/bd-cities`)
     ]);
     locations = (await locRes.json()).locations;
     categories = (await catRes.json()).categories;

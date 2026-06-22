@@ -39,7 +39,7 @@ const routes = [
   { method: 'GET',  verb: 'categories',      file: '/auctions/meta/categories.js' },
   { method: 'GET',  verb: 'locations',       file: '/auctions/meta/locations.js' },
   { method: 'GET',  verb: 'bd-locations',    file: '/auctions/meta/bd-locations.js' },
-  { method: 'GET',  verb: 'cities',          file: '/auctions/meta/cities.js' },
+  { method: 'GET',  verb: 'bd-cities',       file: '/auctions/meta/bd-cities.js' },
   { method: 'GET',  verb: 'seller-dashboard', file: '/auctions/seller/dashboard.js' },
 
   // Upload routes (flattened: was /api/upload/auction, /api/upload/image)
