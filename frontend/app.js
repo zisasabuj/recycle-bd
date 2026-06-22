@@ -15,6 +15,7 @@ let allAuctions = [];
 let locations = {};
 let bdLocations = {};
 let bdDistricts = [];
+let bdCities = {};  // major cities with urban areas (Dhaka→Dhanmondi, etc.)
 let categories = [];
 // ---- Polling state ----
 let detailPollHandle = null;     // interval id when viewing auction detail
@@ -66,16 +67,19 @@ async function init() {
 
 async function loadMeta() {
   try {
-    const [locRes, catRes, bdRes] = await Promise.all([
+    const [locRes, catRes, bdRes, cityRes] = await Promise.all([
       fetch(`${API_URL}/api/x/locations`),
       fetch(`${API_URL}/api/x/categories`),
-      fetch(`${API_URL}/api/x/bd-locations`)
+      fetch(`${API_URL}/api/x/bd-locations`),
+      fetch(`${API_URL}/api/x/cities`)
     ]);
     locations = (await locRes.json()).locations;
     categories = (await catRes.json()).categories;
     const bdData = await bdRes.json();
     bdLocations = bdData.locations;
     bdDistricts = bdData.districts;
+    const cityData = await cityRes.json();
+    bdCities = cityData.locations;  // city → areas
     populateDistrictFilter();
 
     // Topbar "All Bangladesh" filter — uses BD 64-district list
@@ -88,13 +92,12 @@ async function loadMeta() {
       });
     }
 
-    // Create form: District dropdown — BD 64-district list
+    // Create form: District (city) dropdown — uses city list (Dhaka, Chittagong, etc.)
     const districtSel = document.getElementById('district');
     if (districtSel) {
-      districtSel.innerHTML = '<option value="">Select District</option>';
-      (bdDistricts || Object.keys(bdLocations || {})).forEach(d => {
-        const name = (typeof d === 'string') ? d : (d && d.name) ? d.name : '';
-        if (name) districtSel.innerHTML += `<option value="${name}">${name}</option>`;
+      districtSel.innerHTML = '<option value="">Select City</option>';
+      Object.keys(bdCities || {}).sort().forEach(city => {
+        districtSel.innerHTML += `<option value="${city}">${city}</option>`;
       });
     }
 
@@ -116,16 +119,16 @@ async function loadMeta() {
   } catch (e) { console.error('Failed to load meta', e); }
 }
 
-// Populate Area dropdown based on selected District (create form)
-// District → Area/Thana cascade (replaces old city→area)
+// Populate Area dropdown based on selected City (create form)
+// City → Area/Thana cascade (BD major cities)
 function updateThanas() {
-  const district = document.getElementById('district').value;
+  const city = document.getElementById('district').value;
   const areaSelect = document.getElementById('area');
   if (!areaSelect) return;
   areaSelect.innerHTML = '<option value="">Select Area</option>';
-  if (district && bdLocations[district]) {
-    bdLocations[district].forEach(t => {
-      areaSelect.innerHTML += `<option value="${t}">${t}</option>`;
+  if (city && bdCities && bdCities[city]) {
+    bdCities[city].forEach(a => {
+      areaSelect.innerHTML += `<option value="${a}">${a}</option>`;
     });
     areaSelect.disabled = false;
     areaSelect.required = true;

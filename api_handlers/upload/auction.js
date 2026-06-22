@@ -7,7 +7,7 @@
 import { prisma } from '../_lib/prisma.js';
 import { uploadToImgBB } from '../_lib/imgbb.js';
 import { withCors, withAuth, json, error } from '../_lib/middleware.js';
-import { BD_LOCATIONS, getThanas } from '../_lib/bdLocations.js';
+import { BD_CITIES, getAreas } from '../_lib/bdLocations.js';
 
 const CATEGORIES = ['Electronics', 'Furniture', 'Clothing', 'Vehicles', 'Books', 'Sports', 'Home Appliances', 'Other'];
 const VALID_LISTING_TYPES = ['BID', 'FIXED'];
@@ -29,10 +29,10 @@ export default withCors(withAuth(async (req, res) => {
     if (!category || !CATEGORIES.includes(category)) return error(res, 400, 'Invalid category');
     if (!condition || !VALID_CONDITIONS.includes(condition)) return error(res, 400, 'Invalid condition (must be New or Used)');
 
-    // Location validation: city is a BD district, area is a thana within that district
-    if (!BD_LOCATIONS[city]) return error(res, 400, `Invalid district: ${city}. Pick from BD 64-district list.`);
-    const validThanas = getThanas(city);
-    if (!validThanas.includes(area)) return error(res, 400, `Invalid area: ${area}. Pick a thana within district ${city}.`);
+    // Location validation: city = a major city, area = an urban area within that city
+    if (!BD_CITIES[city]) return error(res, 400, `Invalid city: ${city}. Pick from the city list.`);
+    const validAreas = getAreas(city);
+    if (!validAreas.includes(area)) return error(res, 400, `Invalid area: ${area}. Pick an area within ${city}.`);
 
     // Listing type
     let lType = listingType || 'FIXED';  // default FIXED = cart-only

@@ -2,6 +2,30 @@
 // Source: Local Government Engineering Department (LGED) reference list
 // 64 districts, ~495 thanas. Used for buyer/seller location search.
 
+// Major cities with their urban areas (used for product listing form).
+// Each city has its well-known neighborhoods/areas. This is the primary
+// location selector for new listings (cart + bid items).
+// NOTE: This is separate from BD_LOCATIONS (which is admin districts with
+// their upazilas/thanas). For product listing, users think in terms of cities
+// and neighborhoods, not administrative districts.
+export const BD_CITIES = {
+  'Dhaka':       ['Dhanmondi', 'Mohammadpur', 'Mirpur', 'Uttara', 'Gulshan', 'Banani', 'Bashundhara', 'Old Dhaka', 'Tejgaon', 'Ramna', 'Malibagh', 'Badda', 'Rampura', 'Khilgaon', 'Motijheel', 'Paltan', 'Wari', 'Lalbagh', 'Azimpur', 'New Market', 'Hazaribagh', 'Kamrangirchar', 'Keraniganj', 'Savar', 'Tongi'],
+  'Chittagong':  ['Agrabad', 'Panchlaish', 'Khulshi', 'Halishahar', 'Nasirabad', 'Chawk Bazaar', 'Patiya', 'Karnaphuli', 'Bayazid', 'Hathazari'],
+  'Sylhet':      ['Zindabazar', 'Ambarkhana', 'Akhalia', 'Shahporan', 'Beanibazar', 'Moulvibazar'],
+  'Rajshahi':    ['Shaheb Bazar', 'Boalia', 'Motihar', 'Rajpara', 'Shiroil'],
+  'Khulna':      ['Sonadanga', 'Khalishpur', 'Daulatpur', 'Khan Jahan Ali', 'Nirala'],
+  'Barishal':    ['Sadar Road', 'Nathullabad', 'Rupatali', 'Banglabazar'],
+  'Rangpur':     ['Jahaj Company', 'Pairaband', 'Mahiganj', 'Keranipara'],
+  'Mymensingh':  ['Sadar', 'Charpara', 'Kachijhuli', 'Chorganga'],
+  'Comilla':     ['Kandirpar', 'Ranir Bazar', 'Tomsom Bridge', 'Bhooter Goli'],
+  'Gazipur':     ['Tongi', 'Board Bazar', 'Joydebpur', 'Kaliakair', 'Sreepur', 'Kapasia'],
+  'Narayanganj': ['Sadar', 'Bandar', 'Araihazar', 'Rupganj', 'Sonargaon'],
+  'Cox\'s Bazar':['Sadar', 'Kolatoli', 'Sugandha', 'Laboni Beach', 'Inani'],
+};
+export const BD_CITY_NAMES = Object.keys(BD_CITIES).sort();
+
+export const getAreas = (city) => BD_CITIES[city] || [];
+
 export const BD_LOCATIONS = {
   // ============ DHAKA DIVISION ============
   'Dhaka':          ['Dhamrai', 'Dohar', 'Keraniganj', 'Nawabganj', 'Savar'],
