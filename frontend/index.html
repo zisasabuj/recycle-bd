@@ -660,12 +660,38 @@
             </select>
           <label>Condition
             <select id="condition" required onchange="onConditionChange()">
-              <option value="Used">Used (Bidding)</option>
               <option value="New">New (Direct Purchase)</option>
+              <option value="Used">Used (Bidding)</option>
             </select>
           </label>
-          <label id="biddingDurationLabel" style="display:none">Bidding Duration (days)
-            <select id="biddingDurationDays" required>
+        </div>
+
+        <!-- Listing type — only visible for Used items. New items are always cart-only. -->
+        <div id="listingTypeRow" class="form-row" style="display:none">
+          <label style="flex:1">
+            Listing Type
+            <div id="listingTypeGroup" style="display:flex; gap:16px; margin-top:6px; padding:6px 0;">
+              <label style="display:flex; align-items:center; gap:6px; cursor:pointer; font-weight:500;">
+                <input type="radio" name="listingType" value="BID" checked onchange="onListingTypeChange()">
+                🔨 <span>Bidding</span>
+              </label>
+              <label style="display:flex; align-items:center; gap:6px; cursor:pointer; font-weight:500;">
+                <input type="radio" name="listingType" value="FIXED" onchange="onListingTypeChange()">
+                💰 <span>Fixed Price</span>
+              </label>
+            </div>
+          </label>
+        </div>
+
+        <div class="form-row" id="priceRow">
+          <label>Base Price (BDT)<input type="number" id="basePrice" min="100" required></label>
+          <label id="bidIncrementLabel">Bid Increment (default 100)<input type="number" id="bidIncrement" min="50" placeholder="100"></label>
+        </div>
+
+        <!-- Bidding duration — only for Used + Bid. Hidden for New or Used+Fixed. -->
+        <div class="form-row" id="biddingDurationLabel" style="display:none">
+          <label>Bidding Duration (days)
+            <select id="biddingDurationDays">
               <option value="">Select duration</option>
               <option value="2">2 days</option>
               <option value="3">3 days</option>
@@ -678,37 +704,19 @@
         </div>
 
         <div class="form-row">
-          <label>Base Price (BDT)<input type="number" id="basePrice" min="100" required></label>
-          <label>Bid Increment (default 100)<input type="number" id="bidIncrement" min="50" placeholder="100"></label>
-        </div>
-
-        <div class="form-row">
-          <label>City
-            <select id="city" required onchange="updateAreas()">
-              <option value="">Select City</option>
+          <label>District
+            <select id="district" required onchange="updateThanas()">
+              <option value="">Select District</option>
             </select>
           </label>
-          <label>Area
-            <select id="area" required>
+          <label>Area / Thana
+            <select id="area" required disabled>
               <option value="">Select Area</option>
             </select>
           </label>
         </div>
 
-        <div class="form-row">
-          <label>District (Division/District)
-            <select id="district" onchange="updateThanas()">
-              <option value="">Select District (optional)</option>
-            </select>
-          </label>
-          <label>Thana / Upazila (Thana/Upazila)
-            <select id="thana" disabled>
-              <option value="">Select Thana (optional)</option>
-            </select>
-          </label>
-        </div>
-
-        <p class="note">⚠️ Only city + area required. District + thana is optional for BD-specific local search.</p>
+        <p class="note">ℹ️ District + Area required. Pick district first to see areas.</p>
         <button type="submit" class="btn-primary" id="createSubmitBtn">Post Item</button>
         <p id="createError" class="error"></p>
       </form>

@@ -93,6 +93,7 @@ const STATEMENTS = [
      "status" "AuctionStatus" NOT NULL DEFAULT 'ACTIVE',
      "biddingDurationDays" INTEGER,
      "firstBidAt" TIMESTAMP(3),
+     "listingType" TEXT DEFAULT 'BID',
      "winnerId" TEXT,
      "secondWinnerId" TEXT,
      "viewCount" INTEGER NOT NULL DEFAULT 0,

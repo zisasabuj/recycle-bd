@@ -80,10 +80,15 @@ model Auction {
   endsAt         DateTime
   status         AuctionStatus  @default(ACTIVE)
 
-  // Bidding duration in days (2-7), required for Used items, ignored for New items (cart-only)
+  // Bidding duration in days (2-7), required for Used-Bid items, ignored otherwise
   biddingDurationDays Int?
   // First bid timestamp — used to compute endsAt for Used items (endsAt = firstBidAt + duration)
   firstBidAt     DateTime?
+  // Listing sub-type:
+  //   'BID'   = Used item with bidding (default for Used)
+  //   'FIXED' = Used item with fixed price (no bidding, like New)
+  // For New items, listingType is null/N/A
+  listingType    String?  @default("BID")
   // endsAt is computed lazily: for ACTIVE auctions with bids, effective end = firstBidAt + duration.
   // Cron + worker check this each tick.
 

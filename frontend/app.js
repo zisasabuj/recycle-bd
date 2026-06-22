@@ -78,23 +78,27 @@ async function loadMeta() {
     bdDistricts = bdData.districts;
     populateDistrictFilter();
 
-    // City filter dropdown (primary location filter)
+    // Topbar "All Bangladesh" filter — uses BD 64-district list
     const cityFilter = document.getElementById('districtFilter');
-    const citySelect = document.getElementById('city');
     if (cityFilter) {
-      cityFilter.innerHTML = '<option value="">All Cities</option>';
-      Object.keys(locations).forEach(city => {
-        cityFilter.innerHTML += `<option value="${city}">${city}</option>`;
-      });
-    }
-    if (citySelect) {
-      citySelect.innerHTML = '<option value="">Select City</option>';
-      Object.keys(locations).forEach(city => {
-        citySelect.innerHTML += `<option value="${city}">${city}</option>`;
+      cityFilter.innerHTML = '<option value="">All Bangladesh</option>';
+      (bdDistricts || Object.keys(bdLocations || {})).forEach(d => {
+        const name = (typeof d === 'string') ? d : (d && d.name) ? d.name : '';
+        if (name) cityFilter.innerHTML += `<option value="${name}">${name}</option>`;
       });
     }
 
-    // Legacy: keep BD district list available for create form's optional fields
+    // Create form: District dropdown — BD 64-district list
+    const districtSel = document.getElementById('district');
+    if (districtSel) {
+      districtSel.innerHTML = '<option value="">Select District</option>';
+      (bdDistricts || Object.keys(bdLocations || {})).forEach(d => {
+        const name = (typeof d === 'string') ? d : (d && d.name) ? d.name : '';
+        if (name) districtSel.innerHTML += `<option value="${name}">${name}</option>`;
+      });
+    }
+
+    // Categories
     const catFilter = document.getElementById('categoryFilter');
     const catSelect = document.getElementById('category');
     categories.forEach(cat => {
@@ -102,47 +106,32 @@ async function loadMeta() {
       if (catSelect) catSelect.innerHTML += `<option value="${cat}">${cat}</option>`;
     });
 
-    // Populate header search-category dropdown (Nest Mart)
+    // Header search-category dropdown (Nest Mart)
     const headerCatSel = document.getElementById('headerCategorySelect');
     if (headerCatSel) {
       categories.forEach(cat => {
         headerCatSel.innerHTML += `<option value="${cat}">${cat}</option>`;
       });
     }
-
-    // Populate create form city select (legacy locations)
-    const citySel = document.getElementById('city');
-    if (citySel) {
-      Object.keys(locations).forEach(city => {
-        citySel.innerHTML += `<option value="${city}">${city}</option>`;
-      });
-    }
   } catch (e) { console.error('Failed to load meta', e); }
 }
 
-function updateAreas() {
-  const city = document.getElementById('city').value;
-  const areaSelect = document.getElementById('area');
-  areaSelect.innerHTML = '<option value="">Select Area</option>';
-  if (city && locations[city]) {
-    locations[city].forEach(area => {
-      areaSelect.innerHTML += `<option value="${area}">${area}</option>`;
-    });
-  }
-}
-
-// Populate Thana dropdown based on selected District (create form)
+// Populate Area dropdown based on selected District (create form)
+// District → Area/Thana cascade (replaces old city→area)
 function updateThanas() {
   const district = document.getElementById('district').value;
-  const thanaSelect = document.getElementById('thana');
-  thanaSelect.innerHTML = '<option value="">Select Thana (optional)</option>';
+  const areaSelect = document.getElementById('area');
+  if (!areaSelect) return;
+  areaSelect.innerHTML = '<option value="">Select Area</option>';
   if (district && bdLocations[district]) {
     bdLocations[district].forEach(t => {
-      thanaSelect.innerHTML += `<option value="${t}">${t}</option>`;
+      areaSelect.innerHTML += `<option value="${t}">${t}</option>`;
     });
-    thanaSelect.disabled = false;
+    areaSelect.disabled = false;
+    areaSelect.required = true;
   } else {
-    thanaSelect.disabled = true;
+    areaSelect.disabled = true;
+    areaSelect.required = false;
   }
 }
 
@@ -187,24 +176,67 @@ function openAuthModal() { document.getElementById('authModal').style.display = 
 function closeAuthModal() { document.getElementById('authModal').style.display = 'none'; document.getElementById('authError').textContent = ''; }
 function openCreateModal() { document.getElementById('createModal').style.display = 'flex'; onConditionChange(); }
 
-// Show/hide Bidding Duration field based on condition
-// Used = bidding (duration required), New = cart-only (no bidding)
+// Cascading UI logic — Condition + ListingType drive which fields are visible/required.
+//   Condition: New  → Cart-only (fixed price, no bidding)
+//   Condition: Used + ListingType: BID   → Bidding (basePrice + bidIncrement + duration)
+//   Condition: Used + ListingType: FIXED → Cart-only (fixed price, no bidding)
 function onConditionChange() {
   const cond = document.getElementById('condition')?.value || 'Used';
-  const label = document.getElementById('biddingDurationLabel');
-  const select = document.getElementById('biddingDurationDays');
+  const listingRow = document.getElementById('listingTypeRow');
+  const biddingRow = document.getElementById('biddingDurationLabel');
+  const incrementLabel = document.getElementById('bidIncrementLabel');
   const submitBtn = document.getElementById('createSubmitBtn');
-  if (!label || !select) return;
+  if (!listingRow) return;
+
   if (cond === 'Used') {
-    label.style.display = '';
-    select.required = true;
-    if (submitBtn) submitBtn.textContent = 'Post for Bidding';
+    // Used: show listing type row; let onListingTypeChange decide duration
+    listingRow.style.display = '';
+    onListingTypeChange();
   } else {
-    label.style.display = 'none';
-    select.required = false;
-    select.value = '';
+    // New: hide listing type, hide duration; bid increment hidden too
+    listingRow.style.display = 'none';
+    biddingRow.style.display = 'none';
+    if (incrementLabel) incrementLabel.style.display = 'none';
     if (submitBtn) submitBtn.textContent = 'Post for Sale';
   }
+}
+
+function onListingTypeChange() {
+  const cond = document.getElementById('condition')?.value || 'Used';
+  if (cond !== 'Used') return;  // only matters for Used
+  const type = document.querySelector('input[name="listingType"]:checked')?.value || 'BID';
+  const biddingRow = document.getElementById('biddingDurationLabel');
+  const incrementLabel = document.getElementById('bidIncrementLabel');
+  const durationSelect = document.getElementById('biddingDurationDays');
+  const submitBtn = document.getElementById('createSubmitBtn');
+
+  if (type === 'BID') {
+    // Bidding: show duration + increment
+    biddingRow.style.display = '';
+    if (incrementLabel) incrementLabel.style.display = '';
+    if (durationSelect) durationSelect.required = true;
+    if (submitBtn) submitBtn.textContent = 'Post for Bidding';
+  } else {
+    // Fixed: hide duration + increment
+    biddingRow.style.display = 'none';
+    if (incrementLabel) incrementLabel.style.display = 'none';
+    if (durationSelect) {
+      durationSelect.required = false;
+      durationSelect.value = '';
+    }
+    if (submitBtn) submitBtn.textContent = 'Post for Sale';
+  }
+}
+
+// Helper: detect current effective mode (cart-only vs bidding)
+function isBiddingMode() {
+  const cond = document.getElementById('condition')?.value;
+  if (cond === 'New') return false;
+  if (cond === 'Used') {
+    const type = document.querySelector('input[name="listingType"]:checked')?.value || 'BID';
+    return type === 'BID';
+  }
+  return false;
 }
 
 // ========== CONDITION-AWARE CTA RENDERING ==========
@@ -1844,15 +1876,21 @@ async function handleCreateAuction(e) {
   formData.append('category', document.getElementById('category').value);
   formData.append('condition', document.getElementById('condition').value);
   formData.append('basePrice', document.getElementById('basePrice').value);
-  formData.append('bidIncrement', document.getElementById('bidIncrement').value || '100');
-  formData.append('city', document.getElementById('city').value);
+  // District → city, Area → area (single source of truth: BD 64-district cascade)
+  formData.append('city', document.getElementById('district').value);
   formData.append('area', document.getElementById('area').value);
-  formData.append('district', document.getElementById('district').value);
-  formData.append('thana', document.getElementById('thana').value);
-  // Bidding duration: only for Used items. New items are cart-only (no bidding).
+  // Listing sub-type — only meaningful for Used items
   const cond = document.getElementById('condition').value;
   if (cond === 'Used') {
-    formData.append('biddingDurationDays', document.getElementById('biddingDurationDays').value);
+    const listingType = document.querySelector('input[name="listingType"]:checked')?.value || 'BID';
+    formData.append('listingType', listingType);
+    if (listingType === 'BID') {
+      formData.append('bidIncrement', document.getElementById('bidIncrement').value || '100');
+      formData.append('biddingDurationDays', document.getElementById('biddingDurationDays').value);
+    }
+  } else {
+    // New items: no bidding, no listing type
+    formData.append('listingType', 'FIXED');
   }
 
   try {
@@ -1874,20 +1912,27 @@ async function handleCreateAuction(e) {
       // Send: keepImages = existing URLs user did NOT delete (still in existingImageUrls)
       //       images = newly picked files as data URIs (uploaded to imgBB)
       // Backend will merge: keepImages + newly uploaded → final images[]
+      const condEdit = document.getElementById('condition').value;
+      const listingTypeEdit = condEdit === 'Used'
+        ? (document.querySelector('input[name="listingType"]:checked')?.value || 'BID')
+        : 'FIXED';
       const jsonBody = {
         title: document.getElementById('title').value,
         description: document.getElementById('description').value,
         category: document.getElementById('category').value,
-        condition: document.getElementById('condition').value,
+        condition: condEdit,
+        listingType: listingTypeEdit,
         basePrice: document.getElementById('basePrice').value,
-        bidIncrement: document.getElementById('bidIncrement').value || 100,
-        city: document.getElementById('city').value,
+        city: document.getElementById('district').value,
         area: document.getElementById('area').value,
-        district: document.getElementById('district').value,
-        thana: document.getElementById('thana').value,
         keepImages: existingImageUrls,
         images: imageDataUris.length > 0 ? imageDataUris : undefined
       };
+      // Bid fields only for Used+Bid
+      if (condEdit === 'Used' && listingTypeEdit === 'BID') {
+        jsonBody.bidIncrement = document.getElementById('bidIncrement').value || 100;
+        jsonBody.biddingDurationDays = parseInt(document.getElementById('biddingDurationDays').value, 10);
+      }
       res = await fetch(`${API_URL}/api/auction/${editingAuctionId}`, {
         method: 'PUT',
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -1896,21 +1941,23 @@ async function handleCreateAuction(e) {
     } else {
       // ===== CREATE MODE =====
       const condNow = document.getElementById('condition').value;
+      const listingTypeNow = condNow === 'Used'
+        ? (document.querySelector('input[name="listingType"]:checked')?.value || 'BID')
+        : 'FIXED';
       const jsonBody = {
         title: document.getElementById('title').value,
         description: document.getElementById('description').value,
         category: document.getElementById('category').value,
         condition: condNow,
+        listingType: listingTypeNow,
         basePrice: document.getElementById('basePrice').value,
-        bidIncrement: document.getElementById('bidIncrement').value || 100,
-        city: document.getElementById('city').value,
+        city: document.getElementById('district').value,
         area: document.getElementById('area').value,
-        district: document.getElementById('district').value,
-        thana: document.getElementById('thana').value,
         images: imageDataUris
       };
-      // Bidding duration: only for Used items
-      if (condNow === 'Used') {
+      // Bid fields only for Used+Bid
+      if (condNow === 'Used' && listingTypeNow === 'BID') {
+        jsonBody.bidIncrement = document.getElementById('bidIncrement').value || 100;
         jsonBody.biddingDurationDays = parseInt(document.getElementById('biddingDurationDays').value, 10);
       }
       res = await fetch(`${API_URL}/api/x/upload-auction`, {
