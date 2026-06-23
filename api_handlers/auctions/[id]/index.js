@@ -12,7 +12,7 @@ async function handleGet(req, res, id) {
         seller: { select: { id: true, username: true, fullName: true, rating: true, createdAt: true } },
         _count: { select: { bids: true } },
         bids: {
-          select: { id: true, amount: true, bidderId: true, createdAt: true },
+          select: { id: true, amount: true, bidderId: true, placedAt: true },
           orderBy: { amount: 'desc' },
           take: 20,
         },

@@ -1484,7 +1484,7 @@ function renderAuctionDetail(a) {
                   <div class="koko-bidder-row ${i === 1 ? 'highlighted' : ''}">
                     <span class="ico">🏷️</span>
                     <span class="name">Anonymous Bidder #${i+1}</span>
-                    <span class="meta">${formatBidTime(b.createdAt)}</span>
+                    <span class="meta">${formatBidTime(b.placedAt || b.createdAt)}</span>
                     <span class="amount">৳ ${Number(b.amount).toLocaleString()}</span>
                   </div>
                 `).join('')
@@ -1544,7 +1544,7 @@ function renderBidRows(bids, topBid) {
           <div class="bid-row-avatar ${isTop ? 'top' : 'norm'}">${i + 1}</div>
           <div>
             <p class="bid-row-name">Bidder #${i + 1}</p>
-            <p class="bid-row-time">${formatBidTime(b.createdAt)}</p>
+            <p class="bid-row-time">${formatBidTime(b.placedAt || b.createdAt)}</p>
           </div>
         </div>
         <div class="bid-row-amt-wrap">
