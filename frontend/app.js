@@ -176,6 +176,7 @@ function updateThanaFilter() {
 
 // ========== AUTH ==========
 function openAuthModal() { document.getElementById('authModal').style.display = 'flex'; }
+function showAuthModal() { openAuthModal(); } // Alias used in cart/watchlist/detail CTAs
 function closeAuthModal() { document.getElementById('authModal').style.display = 'none'; document.getElementById('authError').textContent = ''; }
 function openCreateModal() { document.getElementById('createModal').style.display = 'flex'; onConditionChange(); }
 
