@@ -38,3 +38,9 @@ backend/prisma/dev.db-journal
 !backend/uploads/products/*.png
 !backend/uploads/products/*.webp
 .vercel
+
+.env.production
+
+dump.sql
+
+*.sql

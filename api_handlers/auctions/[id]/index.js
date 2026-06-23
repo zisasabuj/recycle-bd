@@ -9,15 +9,23 @@ async function handleGet(req, res, id) {
     const auction = await prisma.auction.findUnique({
       where: { id },
       include: {
-        seller: { select: { username: true, rating: true, createdAt: true } },
+        seller: { select: { id: true, username: true, fullName: true, rating: true, createdAt: true } },
         _count: { select: { bids: true } },
+        bids: {
+          select: { id: true, amount: true, bidderId: true, createdAt: true },
+          orderBy: { amount: 'desc' },
+          take: 20,
+        },
       },
     });
     if (!auction) return error(res, 404, 'Auction not found');
+    // Compute currentMaxBid = top bid amount (already desc-sorted)
+    auction.currentMaxBid = auction.bids && auction.bids.length ? Number(auction.bids[0].amount) : null;
     return json(res, 200, { auction });
   } catch (err) {
-    console.error('[get auction]', err);
-    return error(res, 500, 'Failed to get auction');
+    console.error('[get auction]', err && err.message ? err.message : err);
+    console.error('[get auction stack]', err && err.stack ? err.stack : 'no stack');
+    return error(res, 500, 'Failed to get auction: ' + (err && err.message ? err.message : 'unknown'));
   }
 }
 
