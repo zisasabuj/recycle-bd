@@ -88,8 +88,7 @@ model Auction {
   //   'BID'   = Used item with bidding (default for Used)
   //   'FIXED' = Used item with fixed price (no bidding, like New)
   // For New items, listingType is null/N/A
-  listingType    String?  @default("BID")
-  // endsAt is computed lazily: for ACTIVE auctions with bids, effective end = firstBidAt + duration.
+// endsAt is computed lazily: for ACTIVE auctions with bids, effective end = firstBidAt + duration.
   // Cron + worker check this each tick.
 
   winnerId       String?

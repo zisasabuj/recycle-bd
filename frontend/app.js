@@ -41,7 +41,7 @@ async function init() {
   await loadMeta();
   if (token) {
     try {
-      const res = await fetch(`${API_URL}/api/me`, {
+      const res = await fetch(`${API_URL}/api/x/me`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) {
@@ -303,7 +303,7 @@ function renderUsedItemCta(a, isSeller, minNext, myTop) {
 async function addToCart(auctionId) {
   if (!currentUser) { showAuthModal(); return; }
   try {
-    const res = await fetch(`${API_URL}/api/cart`, {
+    const res = await fetch(`${API_URL}/api/x/cart`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ auctionId })
@@ -323,7 +323,7 @@ async function addToCart(auctionId) {
 
 async function removeFromCart(auctionId) {
   try {
-    await fetch(`${API_URL}/api/cart/${auctionId}`, {
+    await fetch(`${API_URL}/api/x/cart/${auctionId}`, {
       method: 'DELETE',
       headers: { Authorization: `Bearer ${token}` }
     });
@@ -341,7 +341,7 @@ async function loadCartView() {
     return;
   }
   try {
-    const res = await fetch(`${API_URL}/api/cart`, { headers: { Authorization: `Bearer ${token}` } });
+    const res = await fetch(`${API_URL}/api/x/cart`, { headers: { Authorization: `Bearer ${token}` } });
     const data = await res.json();
     const items = data.items || [];
     if (items.length === 0) {
@@ -493,14 +493,18 @@ function toggleAuthMode() {
 
 async function handleAuth(e) {
   e.preventDefault();
+  e.stopPropagation();
   const errorEl = document.getElementById('authError');
+  const submitBtn = document.getElementById('authSubmit');
   errorEl.textContent = '';
+  submitBtn.disabled = true;
+  submitBtn.textContent = '⏳ Logging in...';
   const username = document.getElementById('authUsername').value;
   const password = document.getElementById('authPassword').value;
   try {
     let res, data;
     if (authMode === 'login') {
-      res = await fetch(`${API_URL}/api/login`, {
+      res = await fetch(`${API_URL}/api/x/auth-login`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ emailOrUsername: username, password })
       });
@@ -513,7 +517,7 @@ async function handleAuth(e) {
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new Error('Please enter a valid email address');
       if (!phone) throw new Error('Phone number is required');
       if (!/^[+\d][\d\s\-()]{6,}$/.test(phone)) throw new Error('Please enter a valid phone number');
-      res = await fetch(`${API_URL}/api/register`, {
+      res = await fetch(`${API_URL}/api/x/auth-register`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, email, password, fullName, phone })
       });
@@ -529,8 +533,31 @@ async function handleAuth(e) {
     loadAuctions();
   } catch (err) {
     errorEl.textContent = err.message;
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.textContent = authMode === 'login' ? 'Login' : 'Register';
   }
 }
+
+// Ensure auth form submit is properly bound (backup for HTML onsubmit)
+document.addEventListener('DOMContentLoaded', () => {
+  const authForm = document.getElementById('authForm');
+  if (authForm) {
+    authForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      handleAuth(e);
+    });
+  }
+  const submitBtn = document.getElementById('authSubmit');
+  if (submitBtn) {
+    submitBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      handleAuth(e);
+    });
+  }
+});
 
 function logout() {
   localStorage.removeItem('token');
@@ -569,7 +596,7 @@ function stopDetailPolling() {
 async function pollAuctionDetail(auctionId) {
   if (!currentAuction || currentAuction.id !== auctionId) return;
   try {
-    const r = await fetch(`${API_URL}/api/auction/${auctionId}`);
+    const r = await fetch(`${API_URL}/api/x/auction-detail?id=${auctionId}`);
     if (!r.ok) return;
     const data = await r.json();
     const fresh = data.auction;
@@ -667,7 +694,7 @@ function startNotifPolling() {
   notifPollHandle = setInterval(async () => {
     if (!token || !currentUser) return;
     try {
-      const r = await fetch(`${API_URL}/api/notifications?unreadOnly=1`, { headers: authH() });
+      const r = await fetch(`${API_URL}/api/x/notifications?unreadOnly=1`, { headers: authH() });
       if (!r.ok) return;
       const data = await r.json();
       const count = data.unread || 0;
@@ -1012,7 +1039,7 @@ async function saveProfile(e) {
   const phone = document.getElementById('pfPhone').value.trim();
 
   try {
-    const res = await fetch(`${API_URL}/api/me`, {
+    const res = await fetch(`${API_URL}/api/x/me`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -1178,7 +1205,7 @@ async function loadAuctions() {
   if (condition) params.set('condition', condition);
 
   try {
-    const res = await fetch(`${API_URL}/api/auctions?${params}`);
+    const res = await fetch(`${API_URL}/api/x/auctions?${params}`);
     const data = await res.json();
     allAuctions = data.auctions || [];
     renderAuctions(allAuctions);
@@ -1256,7 +1283,7 @@ function updateHeroStats(auctions) {
 async function fetchGlobalActiveCount() {
   try {
     // Pull a large page to derive count; simple + works without new endpoint
-    const r = await fetch(`${API_URL}/api/auctions?limit=200&status=ACTIVE`);
+    const r = await fetch(`${API_URL}/api/x/auctions?limit=200&status=ACTIVE`);
     if (!r.ok) return;
     const data = await r.json();
     const total = (data.auctions || []).filter(a => a.status === 'ACTIVE').length;
@@ -1312,7 +1339,7 @@ async function viewAuction(id) {
 }
 
 async function loadAuctionDetail(id) {
-  const res = await fetch(`${API_URL}/api/auction/${id}`);
+  const res = await fetch(`${API_URL}/api/x/auction-detail?id=${id}`);
   const data = await res.json();
   currentAuction = data.auction;
   renderAuctionDetail(currentAuction);
@@ -1679,7 +1706,7 @@ let editingAuctionId = null; // null = create mode, otherwise = edit mode
 
 async function openEditModal(auctionId) {
   try {
-    const r = await fetch(`${API_URL}/api/auction/${auctionId}`);
+    const r = await fetch(`${API_URL}/api/x/auction-detail?id=${auctionId}`);
     if (!r.ok) throw new Error('fetch failed');
     const a = await r.json();
     const auction = a.auction || a;
@@ -1937,7 +1964,7 @@ async function handleCreateAuction(e) {
         jsonBody.bidIncrement = document.getElementById('bidIncrement').value || 100;
         jsonBody.biddingDurationDays = parseInt(document.getElementById('biddingDurationDays').value, 10);
       }
-      res = await fetch(`${API_URL}/api/auction/${editingAuctionId}`, {
+      res = await fetch(`${API_URL}/api/x/auction-detail?id=${editingAuctionId}`, {
         method: 'PUT',
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify(jsonBody)
@@ -2022,7 +2049,7 @@ init();
 async function deleteAuction(id, title) {
   if (!confirm(`Delete "${title}"? This cannot be undone.`)) return;
   try {
-    const res = await fetch(`${API_URL}/api/auction/${id}`, {
+    const res = await fetch(`${API_URL}/api/x/auction-detail?id=${id}`, {
       method: 'DELETE',
       headers: { 'Authorization': `Bearer ${token}` }
     });
@@ -2052,7 +2079,7 @@ let chatPanelOpen = false;
 async function loadWatchedSet() {
   if (!token) { watchedSet = new Set(); return; }
   try {
-    const r = await fetch(`${API_URL}/api/watchlist`, { headers: authH() });
+    const r = await fetch(`${API_URL}/api/x/watchlist`, { headers: authH() });
     if (!r.ok) { watchedSet = new Set(); return; }
     const data = await r.json();
     watchedSet = new Set((data.auctions || []).map(a => a.id));
@@ -2091,7 +2118,7 @@ async function toggleWatchlist(auctionId, btnEl) {
       if (!r.ok) throw new Error('remove failed');
       showToast('Removed from watchlist', 'ok');
     } else {
-      const r = await fetch(`${API_URL}/api/watchlist`, {
+      const r = await fetch(`${API_URL}/api/x/watchlist`, {
         method: 'POST',
         headers: { ...authH(), 'Content-Type': 'application/json' },
         body: JSON.stringify({ auctionId })
@@ -2116,7 +2143,7 @@ async function toggleWatchlist(auctionId, btnEl) {
 async function loadEndingSoon(targetId) {
   targetId = targetId || 'endingSoonList';
   try {
-    const r = await fetch(`${API_URL}/api/auctions?endingIn=24&limit=8`, { headers: token ? authH() : {} });
+    const r = await fetch(`${API_URL}/api/x/auctions?endingIn=24&limit=8`, { headers: token ? authH() : {} });
     if (!r.ok) return;
     const data = await r.json();
     const list = data.auctions || [];
@@ -2128,7 +2155,7 @@ async function loadEndingSoon(targetId) {
     }
     // Hero right-side: small compact cards, 4 max (7-day window so it always has items)
     if (targetId === 'heroEndingSoonList') {
-      const r7 = await fetch(`${API_URL}/api/auctions?endingIn=168&limit=8`, { headers: token ? authH() : {} });
+      const r7 = await fetch(`${API_URL}/api/x/auctions?endingIn=168&limit=8`, { headers: token ? authH() : {} });
       if (!r7.ok) return;
       const data7 = await r7.json();
       const list7 = data7.auctions || [];
@@ -2180,7 +2207,7 @@ async function loadWatchlistView() {
     return;
   }
   try {
-    const r = await fetch(`${API_URL}/api/watchlist`, { headers: authH() });
+    const r = await fetch(`${API_URL}/api/x/watchlist`, { headers: authH() });
     if (!r.ok) throw new Error('fetch failed');
     const data = await r.json();
     const list = data.auctions || [];
@@ -2251,7 +2278,7 @@ async function loadSellersView() {
   root.innerHTML = '<div class="lot-empty">Loading sellers…</div>';
   try {
     // Pull all active auctions; aggregate per seller
-    const r = await fetch(`${API_URL}/api/auctions?limit=100&status=ACTIVE`);
+    const r = await fetch(`${API_URL}/api/x/auctions?limit=100&status=ACTIVE`);
     if (!r.ok) throw new Error('fetch failed');
     const data = await r.json();
     const list = data.auctions || [];
@@ -2299,7 +2326,7 @@ async function loadChatList() {
   if (!listEl) return;
   if (!token) { listEl.innerHTML = '<div class="chat-empty">Sign in to use chat</div>'; return; }
   try {
-    const r = await fetch(`${API_URL}/api/chats`, { headers: authH() });
+    const r = await fetch(`${API_URL}/api/x/chat-messages`, { headers: authH() });
     if (!r.ok) throw new Error('fetch failed');
     const data = await r.json();
     const chats = data.chats || [];
@@ -2489,7 +2516,7 @@ async function openChatForAuction(auctionId) {
   if (!token) { openAuthModal(); showToast('Sign in to chat', 'warn'); return; }
   try {
     // Find or create chat for this auction
-    const r = await fetch(`${API_URL}/api/chats`, { headers: authH() });
+    const r = await fetch(`${API_URL}/api/x/chat-messages`, { headers: authH() });
     if (!r.ok) {
       // Fall back: try to get/create per-auction chat
       showToast('Chat locked — win the auction first to chat', 'warn');
@@ -2571,7 +2598,7 @@ function applyConditionFilter() {
 /* ---------- Sidebar: Latest 3 items ---------- */
 async function loadSbNew() {
   try {
-    const res = await fetch(`${API_URL}/api/auctions?sort=newest&limit=3`);
+    const res = await fetch(`${API_URL}/api/x/auctions?sort=newest&limit=3`);
     const data = await res.json();
     const items = (data.auctions || []).slice(0, 3);
     const el = document.getElementById('sbNewList');
@@ -2603,7 +2630,7 @@ async function loadHeroEndingSoon() {
   const el = document.getElementById('heroEndingSoon');
   if (!el) return;
   try {
-    const res = await fetch(`${API_URL}/api/auctions?sort=ending&limit=4`);
+    const res = await fetch(`${API_URL}/api/x/auctions?sort=ending&limit=4`);
     const data = await res.json();
     const items = (data.auctions || []).slice(0, 4);
     if (!items.length) {
@@ -2657,7 +2684,7 @@ function stopHeroEndingCountdowns() { if (heroEndingInterval) { clearInterval(he
 /* ---------- Deals Of The Day: 4 ending-soon with countdown ---------- */
 async function loadDealsGrid() {
   try {
-    const res = await fetch(`${API_URL}/api/auctions?sort=ending&limit=4`);
+    const res = await fetch(`${API_URL}/api/x/auctions?sort=ending&limit=4`);
     const data = await res.json();
     const items = (data.auctions || []).slice(0, 4);
     const el = document.getElementById('dealsGrid');
@@ -2746,10 +2773,10 @@ async function loadFourColSections() {
   try {
     // Real data-driven sorts (sortMap keys: top-selling, trending, newest, top-rated)
     const [topSelling, trending, recent, topRated] = await Promise.all([
-      fetch(`${API_URL}/api/auctions?sort=top-selling&limit=3`).then(r => r.json()).then(d => flattenAuctions(d.auctions || [])),
-      fetch(`${API_URL}/api/auctions?sort=trending&limit=3`).then(r => r.json()).then(d => flattenAuctions(d.auctions || [])),
-      fetch(`${API_URL}/api/auctions?sort=newest&limit=3`).then(r => r.json()).then(d => flattenAuctions(d.auctions || [])),
-      fetch(`${API_URL}/api/auctions?sort=top-rated&limit=3`).then(r => r.json()).then(d => flattenAuctions(d.auctions || [])),
+      fetch(`${API_URL}/api/x/auctions?sort=top-selling&limit=3`).then(r => r.json()).then(d => flattenAuctions(d.auctions || [])),
+      fetch(`${API_URL}/api/x/auctions?sort=trending&limit=3`).then(r => r.json()).then(d => flattenAuctions(d.auctions || [])),
+      fetch(`${API_URL}/api/x/auctions?sort=newest&limit=3`).then(r => r.json()).then(d => flattenAuctions(d.auctions || [])),
+      fetch(`${API_URL}/api/x/auctions?sort=top-rated&limit=3`).then(r => r.json()).then(d => flattenAuctions(d.auctions || [])),
     ]);
     renderFcList('fcTopSelling', topSelling);
     renderFcList('fcTrending', trending);

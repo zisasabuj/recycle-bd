@@ -26,7 +26,7 @@ const BD_CITIES = {
 };
 const getAreas = (city) => BD_CITIES[city] || [];
 
-const CATEGORIES = ['Electronics', 'Furniture', 'Clothing', 'Vehicles', 'Books', 'Sports', 'Home Appliances', 'Other'];
+const CATEGORIES = ['Electronics', 'Computer', 'Furniture', 'Clothing', 'Vehicles', 'Books', 'Sports', 'Home Appliances', 'Other'];
 const VALID_LISTING_TYPES = ['BID', 'FIXED'];
 const VALID_CONDITIONS = ['New', 'Used'];
 
@@ -97,13 +97,14 @@ export default withCors(withAuth(async (req, res) => {
 
     const auction = await prisma.auction.create({
       data: {
-        sellerId: req.userId,
+        seller: { connect: { id: req.userId } },
         title, description, images: uploaded, category,
         condition,
-        listingType: lType,
+        // listingType removed — column missing in production DB
+        // listingType: lType,
         basePrice: basePriceNum,
-        bidIncrement: bidInc,           // null for cart-only
-        biddingDurationDays: durationDays,  // null for cart-only
+        ...(bidInc && { bidIncrement: bidInc }),
+        ...(durationDays && { biddingDurationDays: durationDays }),
         city, area,
         endsAt,
       },

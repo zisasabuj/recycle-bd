@@ -20,6 +20,7 @@
     "heic-convert": "^2.1.0",
     "jsonwebtoken": "^9.0.2",
     "multer": "^2.2.0",
+    "pg": "^8.22.0",
     "sharp": "^0.35.1",
     "socket.io": "^4.8.1",
     "zod": "^3.23.8"

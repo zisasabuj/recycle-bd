@@ -42,6 +42,27 @@ const routes = [
   { method: 'GET',  verb: 'bd-cities',       file: '/auctions/meta/bd-cities.js' },
   { method: 'GET',  verb: 'seller-dashboard', file: '/auctions/seller/dashboard.js' },
 
+  // Auctions list + detail (flattened: was /api/auctions, /api/auction/:id)
+  { method: 'GET',  verb: 'auctions',         file: '/auctions/index.js' },
+  { method: 'POST', verb: 'auctions',         file: '/auctions/index.js' },
+  { method: 'GET',  verb: 'auction-detail',   file: '/auctions/[id]/index.js' },
+  { method: 'PUT',  verb: 'auction-detail',   file: '/auctions/[id]/index.js' },
+  { method: 'DELETE', verb: 'auction-detail', file: '/auctions/[id]/index.js' },
+
+  // Cart
+  { method: 'GET',    verb: 'cart',            file: '/cart/index.js' },
+  { method: 'POST',   verb: 'cart',            file: '/cart/index.js' },
+  { method: 'DELETE', verb: 'cart',            file: '/cart/index.js' },
+
+  // Notifications
+  { method: 'GET',    verb: 'notifications',   file: '/notifications/index.js' },
+
+  // Auth (flattened: was /api/auth/login, /api/auth/register)
+  { method: 'POST', verb: 'auth-login',      file: '/auth/login.js' },
+  { method: 'POST', verb: 'auth-register',   file: '/auth/register.js' },
+  { method: 'GET',  verb: 'me',              file: '/auth/me.js' },
+  { method: 'PATCH', verb: 'me',              file: '/auth/me.js' },
+
   // Upload routes (flattened: was /api/upload/auction, /api/upload/image)
   { method: 'POST', verb: 'upload-auction',  file: '/upload/auction.js' },
   { method: 'POST', verb: 'upload-image',    file: '/upload/image.js' },
